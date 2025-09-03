@@ -11,11 +11,13 @@ import {
   HttpStatus,
   HttpCode,
 } from '@nestjs/common';
+import { ApiTags} from '@nestjs/swagger';
 import { CulturalPlacesService } from './cultural-places.service';
 import { CreateCulturalPlaceDto } from './dto/create-cultural-place.dto';
 import { UpdateCulturalPlaceDto } from './dto/update-cultural-place.dto';
 import type { CulturalPlaceQueryDto } from './interfaces/cultural-place.interface';
 
+@ApiTags('cultural-places')
 @Controller('cultural-places')
 export class CulturalPlacesController {
   constructor(private readonly culturalPlacesService: CulturalPlacesService) {}
