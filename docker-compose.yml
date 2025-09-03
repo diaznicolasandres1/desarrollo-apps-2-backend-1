@@ -15,7 +15,9 @@ services:
     networks:
       - cultura-network
     restart: unless-stopped
+  
 
 networks:
   cultura-network:
     driver: bridge
+
