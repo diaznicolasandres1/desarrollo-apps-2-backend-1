@@ -1,0 +1,70 @@
+export interface Schedule {
+  open: string;
+  close: string;
+  closed: boolean;
+}
+
+export interface Contact {
+  address: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+  phone: string;
+  website: string;
+  email: string;
+}
+
+export interface Schedules {
+  monday: Schedule;
+  tuesday: Schedule;
+  wednesday: Schedule;
+  thursday: Schedule;
+  friday: Schedule;
+  saturday: Schedule;
+  sunday: Schedule;
+}
+
+export interface CulturalPlaceInterface {
+  name: string;
+  category: string;
+  characteristics: string[];
+  schedules: Schedules;
+  contact: Contact;
+  image: string;
+  rating: number;
+  isActive: boolean;
+}
+
+export interface CreateCulturalPlaceDto {
+  name: string;
+  category: string;
+  characteristics?: string[];
+  schedules: Schedules;
+  contact: Contact;
+  image: string;
+  rating?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateCulturalPlaceDto {
+  name?: string;
+  category?: string;
+  characteristics?: string[];
+  schedules?: Schedules;
+  contact?: Contact;
+  image?: string;
+  rating?: number;
+  isActive?: boolean;
+}
+
+export interface CulturalPlaceQueryDto {
+  category?: string;
+  isActive?: boolean;
+  search?: string;
+  lat?: number;
+  lng?: number;
+  radius?: number;
+  limit?: number;
+  page?: number;
+}
