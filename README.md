@@ -96,3 +96,99 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+# Desarrollo Apps 2 - Backend
+
+Backend desarrollado con NestJS y MongoDB Atlas.
+
+## Configuración del Entorno
+
+### Prerrequisitos
+
+- Node.js 20.x o superior
+- npm
+- Cuenta de MongoDB Atlas
+
+### Instalación
+
+1. Clona el repositorio
+2. Instala las dependencias:
+```bash
+npm install
+```
+
+### Configuración de MongoDB Atlas
+
+1. Crea una cuenta en [MongoDB Atlas](https://www.mongodb.com/atlas)
+2. Crea un nuevo cluster
+3. Configura un usuario de base de datos
+4. Obtén tu connection string
+
+### Variables de Entorno
+
+Copia el archivo `env.example` a `.env` y configura las variables:
+
+```bash
+cp env.example .env
+```
+
+Edita el archivo `.env` con tu connection string de MongoDB Atlas:
+
+```env
+# MongoDB Atlas Connection String
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority
+
+# Application Port
+PORT=3000
+
+# Environment
+NODE_ENV=development
+```
+
+**Importante:** Reemplaza `username`, `password`, `cluster`, y `database` con tus valores reales de MongoDB Atlas.
+
+## Ejecución
+
+### Desarrollo
+```bash
+npm run start:dev
+```
+
+### Producción
+```bash
+npm run start:prod
+```
+
+## Docker
+
+Para ejecutar con Docker:
+
+```bash
+docker-compose up --build
+```
+
+Asegúrate de tener la variable `MONGODB_URI` configurada en tu entorno antes de ejecutar Docker.
+
+## Estructura del Proyecto
+
+```
+src/
+├── app.controller.ts
+├── app.module.ts
+├── app.service.ts
+├── main.ts
+└── users/
+    ├── user/
+    │   ├── user.controller.ts
+    │   └── user.service.ts
+    ├── user.schema.ts
+    └── users.module.ts
+```
+
+## API Endpoints
+
+- `GET /users` - Obtener todos los usuarios
+- `POST /users` - Crear un nuevo usuario
+- `GET /users/:id` - Obtener un usuario por ID
+- `PUT /users/:id` - Actualizar un usuario
+- `DELETE /users/:id` - Eliminar un usuario

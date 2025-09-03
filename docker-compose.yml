@@ -12,6 +12,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - MONGODB_URI=${MONGODB_URI}
     networks:
       - cultura-network
     restart: unless-stopped
