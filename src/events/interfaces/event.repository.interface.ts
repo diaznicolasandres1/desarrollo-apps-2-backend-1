@@ -10,4 +10,5 @@ export interface EventRepository {
   update(id: string, event: Partial<Event>): Promise<Event | null>;
   delete(id: string): Promise<boolean>;
   toggleActive(id: string): Promise<Event | null>;
+  updateTicketCount(eventId: string, ticketType: string, quantity: number): Promise<boolean>;
 }

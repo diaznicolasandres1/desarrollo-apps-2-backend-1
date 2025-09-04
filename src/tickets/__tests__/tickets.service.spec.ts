@@ -54,6 +54,7 @@ describe('TicketsService', () => {
             validateEventForTicketPurchase: jest.fn(),
             checkTicketAvailability: jest.fn(),
             getTicketAvailability: jest.fn(),
+            updateTicketCount: jest.fn(),
           },
         },
       ],
@@ -96,6 +97,7 @@ describe('TicketsService', () => {
       eventsService.validateEventForTicketPurchase.mockResolvedValue(mockEvent);
       eventsService.checkTicketAvailability.mockResolvedValue(true);
       eventsService.getTicketAvailability.mockResolvedValue(5);
+      eventsService.updateTicketCount.mockResolvedValue(undefined);
       
       repository.create.mockResolvedValueOnce(createdTickets[0]);
       repository.create.mockResolvedValueOnce(createdTickets[1]);
@@ -149,6 +151,7 @@ describe('TicketsService', () => {
       eventsService.validateEventForTicketPurchase.mockResolvedValue(mockEvent);
       eventsService.checkTicketAvailability.mockResolvedValue(true);
       eventsService.getTicketAvailability.mockResolvedValue(5);
+      eventsService.updateTicketCount.mockResolvedValue(undefined);
       
       repository.create.mockResolvedValue(mockTicket);
 
@@ -445,6 +448,7 @@ describe('TicketsService', () => {
       eventsService.validateEventForTicketPurchase.mockResolvedValue(mockEvent);
       eventsService.checkTicketAvailability.mockResolvedValue(true);
       eventsService.getTicketAvailability.mockResolvedValue(3);
+      eventsService.updateTicketCount.mockResolvedValue(undefined);
 
       repository.create.mockResolvedValue(mockTicket);
 

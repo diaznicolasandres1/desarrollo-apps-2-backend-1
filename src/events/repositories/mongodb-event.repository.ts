@@ -85,4 +85,24 @@ export class MongoDBEventRepository implements EventRepository {
     event.isActive = !event.isActive;
     return event.save();
   }
+
+  async updateTicketCount(eventId: string, ticketType: string, quantity: number): Promise<boolean> {
+    try {
+      const result = await this.eventModel.updateOne(
+        { 
+          _id: new Types.ObjectId(eventId),
+          'ticketTypes.type': ticketType,
+          'ticketTypes.isActive': true
+        },
+        { 
+          $inc: { 'ticketTypes.$.soldQuantity': quantity }
+        }
+      );
+      
+      return result.modifiedCount > 0;
+    } catch (error) {
+      console.error('Error updating ticket count:', error);
+      return false;
+    }
+  }
 }

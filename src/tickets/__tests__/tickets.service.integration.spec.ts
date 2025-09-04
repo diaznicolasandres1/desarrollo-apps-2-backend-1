@@ -91,6 +91,7 @@ describe('TicketsService Integration Tests', () => {
             validateEventForTicketPurchase: jest.fn(),
             checkTicketAvailability: jest.fn(),
             getTicketAvailability: jest.fn(),
+            updateTicketCount: jest.fn(),
           },
         },
       ],
@@ -186,6 +187,7 @@ describe('TicketsService Integration Tests', () => {
 
       jest.spyOn(eventsService, 'validateEventForTicketPurchase').mockResolvedValue(mockEvent);
       jest.spyOn(eventsService, 'checkTicketAvailability').mockResolvedValue(true);
+      jest.spyOn(eventsService, 'updateTicketCount').mockResolvedValue(undefined);
       mockTicketRepository.create
         .mockResolvedValueOnce(mockTickets[0])
         .mockResolvedValueOnce(mockTickets[1]);
@@ -196,6 +198,38 @@ describe('TicketsService Integration Tests', () => {
       expect(result[0].ticketType).toBe('general');
       expect(result[0].price).toBe(1000);
       expect(mockTicketRepository.create).toHaveBeenCalledTimes(2);
+      expect(eventsService.updateTicketCount).toHaveBeenCalledWith(
+        '507f1f77bcf86cd799439011',
+        'general',
+        2
+      );
+    });
+
+    it('should update ticket count when purchasing tickets', async () => {
+      const mockTickets = [
+        {
+          _id: '507f1f77bcf86cd799439013',
+          eventId: '507f1f77bcf86cd799439011',
+          userId: '507f1f77bcf86cd799439012',
+          ticketType: 'vip',
+          price: 2000,
+          status: 'active'
+        }
+      ];
+
+      jest.spyOn(eventsService, 'validateEventForTicketPurchase').mockResolvedValue(mockEvent);
+      jest.spyOn(eventsService, 'checkTicketAvailability').mockResolvedValue(true);
+      jest.spyOn(eventsService, 'updateTicketCount').mockResolvedValue(undefined);
+      mockTicketRepository.create.mockResolvedValue(mockTickets[0]);
+
+      const purchaseDto = { ...purchaseTicketDto, ticketType: 'vip', quantity: 1 };
+      await service.purchaseTicket(purchaseDto);
+
+      expect(eventsService.updateTicketCount).toHaveBeenCalledWith(
+        '507f1f77bcf86cd799439011',
+        'vip',
+        1
+      );
     });
   });
 });
