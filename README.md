@@ -1,5 +1,8 @@
 # Cultural Places API
 
+[![Node.js CI](https://github.com/tomasschus/desarrollo-apps-2-backend/actions/workflows/node.js.yml/badge.svg)](https://github.com/tomasschus/desarrollo-apps-2-backend/actions/workflows/node.js.yml)
+[![Coverage](https://codecov.io/gh/tomasschus/desarrollo-apps-2-backend/branch/main/graph/badge.svg)](https://codecov.io/gh/tomasschus/desarrollo-apps-2-backend)
+
 API para gestionar lugares culturales de Buenos Aires (museos, centros culturales, teatros, cines, etc.)
 
 ## 🚀 Live Demo
@@ -97,6 +100,26 @@ npm run start:prod
 - **Documentation:** http://localhost:3000/docs
 
 ## 🧪 Testing
+
+### Test Coverage
+
+```bash
+npm run test:cov
+```
+
+**Current Coverage:**
+- **Statements:** 38.73%
+- **Branches:** 40.29%
+- **Functions:** 37%
+- **Lines:** 40.54%
+
+**Coverage by Module:**
+- **Cultural Places:** 79.43% (statements)
+- **Events:** 59.22% (statements)
+- **Services:** High coverage (81-92%)
+- **Controllers:** High coverage (100%)
+
+> Note: Coverage is lower because we focus on testing business logic (services) rather than infrastructure code (schemas, repositories).
 
 ```bash
 # Run all tests
