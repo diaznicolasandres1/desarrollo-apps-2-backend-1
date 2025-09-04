@@ -1,257 +1,210 @@
-# Cultural Places API - GET Endpoints Documentation
+# API Endpoints Documentation
 
-## Base URL
-```
-http://localhost:3000
-```
+This document lists all available GET endpoints for the Cultural Places API.
 
-## Swagger Documentation
-```
-http://localhost:3000/api
-```
+## Cultural Places
 
-## GET Endpoints
+### Get All Places
+- **Endpoint:** `GET /api/v1/cultural-places`
+- **Description:** Retrieve all cultural places with optional filtering
+- **Query Parameters:**
+  - `category`: Filter by category (Museo, Cine, Centro Cultural, Teatro, etc.)
+  - `isActive`: Filter by active status (true/false)
+  - `minRating`: Minimum rating filter (0-5)
+  - `maxRating`: Maximum rating filter (0-5)
+  - `limit`: Number of results to return
+  - `skip`: Number of results to skip
 
-### 1. Get All Cultural Places
-**Endpoint:** `GET /cultural-places`
+### Get Place by ID
+- **Endpoint:** `GET /api/v1/cultural-places/:id`
+- **Description:** Retrieve a specific cultural place by its ID
+- **Parameters:**
+  - `id`: Cultural place ID
 
-**Description:** Retrieve all cultural places with optional filtering
+### Get Places by Category
+- **Endpoint:** `GET /api/v1/cultural-places/category/:category`
+- **Description:** Retrieve all places of a specific category
+- **Parameters:**
+  - `category`: Category name (Museo, Cine, Centro Cultural, Teatro, etc.)
 
-**Query Parameters:**
-- `category` (optional): Filter by category
-- `isActive` (optional): Filter by active status
-- `minRating` (optional): Minimum rating filter
-- `maxRating` (optional): Maximum rating filter
+### Get Open Places by Day
+- **Endpoint:** `GET /api/v1/cultural-places/open/:day`
+- **Description:** Retrieve places that are open on a specific day
+- **Parameters:**
+  - `day`: Day of the week (monday, tuesday, wednesday, thursday, friday, saturday, sunday)
 
-**Example:**
-```bash
-curl -X GET http://localhost:3000/cultural-places
-```
+### Get Top Rated Places
+- **Endpoint:** `GET /api/v1/cultural-places/top-rated`
+- **Description:** Retrieve places ordered by rating (highest first)
+- **Query Parameters:**
+  - `limit`: Number of results to return (default: 10)
 
-**Response:**
-```json
-[
-  {
-    "_id": "68b8d1f5da39e2daa0564aea",
-    "name": "Oihoy Casa Abierta",
-    "category": "Centro Cultural",
-    "characteristics": ["Exposiciones", "Talleres"],
-    "schedules": {
-      "monday": {"open": "10:00", "close": "18:00", "closed": false},
-      "tuesday": {"open": "10:00", "close": "18:00", "closed": false},
-      "wednesday": {"open": "10:00", "close": "18:00", "closed": false},
-      "thursday": {"open": "10:00", "close": "18:00", "closed": false},
-      "friday": {"open": "10:00", "close": "18:00", "closed": false},
-      "saturday": {"open": "10:00", "close": "18:00", "closed": false},
-      "sunday": {"open": "10:00", "close": "18:00", "closed": false}
-    },
-    "contact": {
-      "address": "14 De Julio 426",
-      "coordinates": {"lat": -34.58837750, "lng": -58.46471750},
-      "phone": "45510070",
-      "website": "www.oihoy.blogspot.com.ar",
-      "email": "recepcion@oihoy.com.ar"
-    },
-    "image": "https://picsum.photos/800/600?random=123",
-    "rating": 4.5,
-    "isActive": true,
-    "createdAt": "2025-09-03T23:40:37.404Z",
-    "updatedAt": "2025-09-03T23:40:37.404Z"
-  }
-]
-```
+### Get Nearby Places
+- **Endpoint:** `GET /api/v1/cultural-places/nearby`
+- **Description:** Retrieve places within a specified radius of given coordinates
+- **Query Parameters:**
+  - `lat`: Latitude coordinate
+  - `lng`: Longitude coordinate
+  - `radius`: Search radius in kilometers (default: 5)
 
-### 2. Get Cultural Place by ID
-**Endpoint:** `GET /cultural-places/:id`
+## Events
 
-**Description:** Retrieve a specific cultural place by its ID
+### Get All Events
+- **Endpoint:** `GET /api/v1/events`
+- **Description:** Retrieve all events with optional filtering
+- **Query Parameters:**
+  - `culturalPlaceId`: Filter by cultural place ID
+  - `isActive`: Filter by active status (true/false)
+  - `date`: Filter by specific date (YYYY-MM-DD format)
+  - `limit`: Number of results to return
+  - `skip`: Number of results to skip
 
-**Path Parameters:**
-- `id`: Cultural place ID
+### Get Active Events
+- **Endpoint:** `GET /api/v1/events/active`
+- **Description:** Retrieve only active events
+- **Query Parameters:**
+  - `limit`: Number of results to return
+  - `skip`: Number of results to skip
 
-**Example:**
-```bash
-curl -X GET http://localhost:3000/cultural-places/68b8d1f5da39e2daa0564aea
-```
+### Get Event by ID
+- **Endpoint:** `GET /api/v1/events/:id`
+- **Description:** Retrieve a specific event by its ID
+- **Parameters:**
+  - `id`: Event ID
 
-**Response:**
+### Get Events by Cultural Place
+- **Endpoint:** `GET /api/v1/events/cultural-place/:culturalPlaceId`
+- **Description:** Retrieve all events for a specific cultural place
+- **Parameters:**
+  - `culturalPlaceId`: Cultural place ID
+- **Query Parameters:**
+  - `isActive`: Filter by active status (true/false)
+
+### Get Events by Date Range
+- **Endpoint:** `GET /api/v1/events/date-range/:startDate/:endDate`
+- **Description:** Retrieve events within a date range
+- **Parameters:**
+  - `startDate`: Start date (YYYY-MM-DD format)
+  - `endDate`: End date (YYYY-MM-DD format)
+
+## Tickets
+
+### Get All Tickets
+- **Endpoint:** `GET /api/v1/tickets`
+- **Description:** Retrieve all tickets with optional filtering
+- **Query Parameters:**
+  - `eventId`: Filter by event ID
+  - `userId`: Filter by user ID
+  - `status`: Filter by ticket status (active, used, cancelled)
+  - `ticketType`: Filter by ticket type (general, vip, jubilados, niños)
+  - `isActive`: Filter by active status (true/false)
+  - `limit`: Number of results to return
+  - `skip`: Number of results to skip
+
+### Get Active Tickets
+- **Endpoint:** `GET /api/v1/tickets/active`
+- **Description:** Retrieve only active tickets
+- **Query Parameters:**
+  - `limit`: Number of results to return
+  - `skip`: Number of results to skip
+
+### Get Ticket by ID
+- **Endpoint:** `GET /api/v1/tickets/:id`
+- **Description:** Retrieve a specific ticket by its ID
+- **Parameters:**
+  - `id`: Ticket ID
+
+### Get Tickets by Event
+- **Endpoint:** `GET /api/v1/tickets/event/:eventId`
+- **Description:** Retrieve all tickets for a specific event
+- **Parameters:**
+  - `eventId`: Event ID
+- **Query Parameters:**
+  - `status`: Filter by ticket status (active, used, cancelled)
+  - `ticketType`: Filter by ticket type (general, vip, jubilados, niños)
+
+### Get Tickets by User
+- **Endpoint:** `GET /api/v1/tickets/user/:userId`
+- **Description:** Retrieve all tickets for a specific user
+- **Parameters:**
+  - `userId`: User ID
+- **Query Parameters:**
+  - `status`: Filter by ticket status (active, used, cancelled)
+  - `ticketType`: Filter by ticket type (general, vip, jubilados, niños)
+
+### Get Tickets by Event and User
+- **Endpoint:** `GET /api/v1/tickets/event/:eventId/user/:userId`
+- **Description:** Retrieve tickets for a specific event and user combination
+- **Parameters:**
+  - `eventId`: Event ID
+  - `userId`: User ID
+
+### Get Tickets by Status
+- **Endpoint:** `GET /api/v1/tickets/status/:status`
+- **Description:** Retrieve tickets by their status
+- **Parameters:**
+  - `status`: Ticket status (active, used, cancelled)
+
+### Get Ticket Statistics for Event
+- **Endpoint:** `GET /api/v1/tickets/event/:eventId/stats`
+- **Description:** Retrieve ticket statistics for a specific event
+- **Parameters:**
+  - `eventId`: Event ID
+- **Response:** Returns statistics including total tickets, counts by status, and counts by ticket type
+
+## Users
+
+### Get All Users
+- **Endpoint:** `GET /api/v1/users`
+- **Description:** Retrieve all users
+- **Query Parameters:**
+  - `limit`: Number of results to return
+  - `skip`: Number of results to skip
+
+### Get User by ID
+- **Endpoint:** `GET /api/v1/users/:id`
+- **Description:** Retrieve a specific user by their ID
+- **Parameters:**
+  - `id`: User ID
+
+## Response Format
+
+All endpoints return JSON responses with the following structure:
+
 ```json
 {
-  "_id": "68b8d1f5da39e2daa0564aea",
-  "name": "Oihoy Casa Abierta",
-  "category": "Centro Cultural",
-  "characteristics": ["Exposiciones", "Talleres"],
-  "schedules": { ... },
-  "contact": { ... },
-  "image": "https://picsum.photos/800/600?random=123",
-  "rating": 4.5,
-  "isActive": true,
-  "createdAt": "2025-09-03T23:40:37.404Z",
-  "updatedAt": "2025-09-03T23:40:37.404Z"
+  "data": [...], // Array of items or single item
+  "message": "Success message",
+  "timestamp": "2025-01-09T22:45:25.123Z"
 }
-```
-
-### 3. Get Cultural Places by Category
-**Endpoint:** `GET /cultural-places/category/:category`
-
-**Description:** Retrieve all cultural places of a specific category
-
-**Path Parameters:**
-- `category`: Category name (Museo, Cine, Centro Cultural, Teatro, Galería, Biblioteca, Auditorio)
-
-**Example:**
-```bash
-curl -X GET http://localhost:3000/cultural-places/category/Centro%20Cultural
-```
-
-**Response:**
-```json
-[
-  {
-    "_id": "68b8d1f5da39e2daa0564aea",
-    "name": "Oihoy Casa Abierta",
-    "category": "Centro Cultural",
-    ...
-  }
-]
-```
-
-### 4. Get Open Cultural Places by Day
-**Endpoint:** `GET /cultural-places/open/:day`
-
-**Description:** Retrieve all cultural places that are open on a specific day
-
-**Path Parameters:**
-- `day`: Day of the week (monday, tuesday, wednesday, thursday, friday, saturday, sunday)
-
-**Example:**
-```bash
-curl -X GET http://localhost:3000/cultural-places/open/monday
-```
-
-**Response:**
-```json
-[
-  {
-    "_id": "68b8d1f5da39e2daa0564aea",
-    "name": "Oihoy Casa Abierta",
-    "category": "Centro Cultural",
-    "schedules": {
-      "monday": {"open": "10:00", "close": "18:00", "closed": false}
-    },
-    ...
-  }
-]
-```
-
-### 5. Get Top Rated Cultural Places
-**Endpoint:** `GET /cultural-places/top-rated`
-
-**Description:** Retrieve the highest rated cultural places
-
-**Query Parameters:**
-- `limit` (optional): Number of places to return (default: 10)
-
-**Example:**
-```bash
-curl -X GET http://localhost:3000/cultural-places/top-rated?limit=5
-```
-
-**Response:**
-```json
-[
-  {
-    "_id": "68b8d1f5da39e2daa0564aea",
-    "name": "Oihoy Casa Abierta",
-    "category": "Centro Cultural",
-    "rating": 4.8,
-    ...
-  }
-]
-```
-
-### 6. Get Nearby Cultural Places
-**Endpoint:** `GET /cultural-places/nearby`
-
-**Description:** Retrieve cultural places within a specified radius of given coordinates
-
-**Query Parameters:**
-- `lat` (required): Latitude
-- `lng` (required): Longitude
-- `radius` (optional): Search radius in meters (default: 5000)
-
-**Example:**
-```bash
-curl -X GET "http://localhost:3000/cultural-places/nearby?lat=-34.58837750&lng=-58.46471750&radius=3000"
-```
-
-**Response:**
-```json
-[
-  {
-    "_id": "68b8d1f5da39e2daa0564aea",
-    "name": "Oihoy Casa Abierta",
-    "category": "Centro Cultural",
-    "contact": {
-      "coordinates": {"lat": -34.58837750, "lng": -58.46471750}
-    },
-    ...
-  }
-]
 ```
 
 ## Error Responses
 
-### 404 Not Found
-```json
-{
-  "statusCode": 404,
-  "message": "Cultural place not found",
-  "error": "Not Found"
-}
-```
+Error responses follow this format:
 
-### 400 Bad Request
 ```json
 {
   "statusCode": 400,
-  "message": "Invalid coordinates",
-  "error": "Bad Request"
+  "message": "Error description",
+  "error": "Bad Request",
+  "timestamp": "2025-01-09T22:45:25.123Z"
 }
 ```
 
-### 500 Internal Server Error
-```json
-{
-  "statusCode": 500,
-  "message": "Internal server error",
-  "error": "Internal Server Error"
-}
-```
+## Authentication
 
-## Testing with curl
+Currently, all endpoints are publicly accessible. Authentication will be implemented in future versions.
 
-### Get all places:
-```bash
-curl -X GET http://localhost:3000/cultural-places | jq '.'
-```
+## Rate Limiting
 
-### Get places by category:
-```bash
-curl -X GET http://localhost:3000/cultural-places/category/Centro%20Cultural | jq '.'
-```
+API requests are limited to 100 requests per minute per IP address.
 
-### Get open places on Monday:
-```bash
-curl -X GET http://localhost:3000/cultural-places/open/monday | jq '.'
-```
+## Pagination
 
-### Get top 5 rated places:
-```bash
-curl -X GET http://localhost:3000/cultural-places/top-rated?limit=5 | jq '.'
-```
+For endpoints that return lists, pagination is supported through `limit` and `skip` query parameters:
 
-### Get nearby places:
-```bash
-curl -X GET "http://localhost:3000/cultural-places/nearby?lat=-34.58837750&lng=-58.46471750&radius=3000" | jq '.'
-```
+- `limit`: Maximum number of items to return (default: 10, max: 100)
+- `skip`: Number of items to skip (default: 0)
+
+Example: `GET /api/v1/cultural-places?limit=20&skip=40` returns items 41-60.

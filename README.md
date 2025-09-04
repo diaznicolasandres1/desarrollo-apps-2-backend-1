@@ -1,7 +1,7 @@
 # Cultural Places API
 
 [![Node.js CI](https://github.com/tomasschus/desarrollo-apps-2-backend/actions/workflows/node.js.yml/badge.svg)](https://github.com/tomasschus/desarrollo-apps-2-backend/actions/workflows/node.js.yml)
-[![Coverage](https://img.shields.io/badge/coverage-38.73%25-brightgreen)](https://github.com/tomasschus/desarrollo-apps-2-backend/actions)
+[![Coverage](https://img.shields.io/badge/coverage-45.64%25-brightgreen)](https://github.com/tomasschus/desarrollo-apps-2-backend/actions/workflows/node.js.yml)
 
 API para gestionar lugares culturales de Buenos Aires (museos, centros culturales, teatros, cines, etc.)
 
@@ -25,6 +25,7 @@ API para gestionar lugares culturales de Buenos Aires (museos, centros culturale
 ### ✅ Implemented
 - **CRUD Operations** for Cultural Places
 - **Events Management** system with ticket types
+- **Ticket Management** system (purchase, validation, history)
 - **Advanced Filtering** (by category, rating, location)
 - **Geospatial Queries** (nearby places)
 - **Schedule Management** (open/closed days)
@@ -34,7 +35,6 @@ API para gestionar lugares culturales de Buenos Aires (museos, centros culturale
 
 ### 🚧 In Progress
 - **User Authentication** and authorization
-- **Ticket Purchase** system
 
 ## 🏗 Architecture
 
@@ -58,6 +58,15 @@ src/
 │   ├── events.controller.ts
 │   ├── events.service.ts
 │   └── events.module.ts
+├── tickets/                 # Tickets module
+│   ├── dto/                 # Data Transfer Objects
+│   ├── interfaces/          # Repository interfaces
+│   ├── repositories/        # Data access layer
+│   ├── schemas/            # MongoDB schemas
+│   ├── __tests__/          # Unit tests
+│   ├── tickets.controller.ts
+│   ├── tickets.service.ts
+│   └── tickets.module.ts
 ├── users/                   # Users module
 ├── config/                  # Configuration files
 └── main.ts                  # Application entry point
@@ -149,6 +158,24 @@ npm run test:watch
 | `GET` | `/api/v1/events/date-range/:startDate/:endDate` | Get events by date range |
 | `PATCH` | `/api/v1/events/:id/toggle-active` | Toggle event status |
 
+### Tickets
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/v1/tickets/purchase` | Purchase tickets for an event |
+| `GET` | `/api/v1/tickets` | Get all tickets with filtering |
+| `GET` | `/api/v1/tickets/active` | Get active tickets only |
+| `GET` | `/api/v1/tickets/:id` | Get ticket by ID |
+| `GET` | `/api/v1/tickets/event/:eventId` | Get tickets by event |
+| `GET` | `/api/v1/tickets/user/:userId` | Get tickets by user |
+| `GET` | `/api/v1/tickets/event/:eventId/user/:userId` | Get tickets by event and user |
+| `GET` | `/api/v1/tickets/status/:status` | Get tickets by status |
+| `GET` | `/api/v1/tickets/event/:eventId/stats` | Get ticket statistics for event |
+| `PATCH` | `/api/v1/tickets/:id` | Update ticket |
+| `PATCH` | `/api/v1/tickets/:id/use` | Mark ticket as used |
+| `PATCH` | `/api/v1/tickets/:id/cancel` | Cancel ticket |
+| `DELETE` | `/api/v1/tickets/:id` | Delete ticket |
+
 ### Query Parameters
 
 - `category`: Filter by category (Museo, Cine, Centro Cultural, etc.)
@@ -215,6 +242,24 @@ npm run test:watch
 }
 ```
 
+### Ticket
+```typescript
+{
+  _id: ObjectId;            // MongoDB ObjectId
+  eventId: ObjectId;         // Reference to Event
+  userId: ObjectId;          // Reference to User
+  ticketType: string;        // 'general', 'vip', 'jubilados', 'niños'
+  price: number;             // Ticket price
+  status: string;            // 'active', 'used', 'cancelled'
+  usedAt?: Date;             // When ticket was used
+  cancelledAt?: Date;        // When ticket was cancelled
+  cancellationReason?: string; // Reason for cancellation
+  isActive: boolean;         // Active status
+  createdAt: Date;           // Creation timestamp
+  updatedAt: Date;          // Last update timestamp
+}
+```
+
 ## 🚀 Deployment
 
 ### Render (Recommended)
@@ -241,8 +286,8 @@ npm run test:watch
 - **✅ Phase 1:** CRUD Operations (Complete)
 - **✅ Phase 2:** Advanced Features (Complete)
 - **✅ Phase 3:** Events Management (Complete)
-- **⏳ Phase 4:** User Management (Pending)
-- **⏳ Phase 5:** Ticket Purchase System (Pending)
+- **✅ Phase 4:** Ticket Management (Complete)
+- **⏳ Phase 5:** User Management (Pending)
 
 ## 📝 License
 
