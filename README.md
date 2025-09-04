@@ -1,7 +1,7 @@
 # Cultural Places API
 
 [![Node.js CI](https://github.com/tomasschus/desarrollo-apps-2-backend/actions/workflows/node.js.yml/badge.svg)](https://github.com/tomasschus/desarrollo-apps-2-backend/actions/workflows/node.js.yml)
-[![Coverage](https://img.shields.io/badge/coverage-45.64%25-brightgreen)](https://github.com/tomasschus/desarrollo-apps-2-backend/actions/workflows/node.js.yml)
+[![codecov](https://codecov.io/gh/tomasschus/desarrollo-apps-2-backend/branch/main/graph/badge.svg)](https://codecov.io/gh/tomasschus/desarrollo-apps-2-backend)
 
 API para gestionar lugares culturales de Buenos Aires (museos, centros culturales, teatros, cines, etc.)
 

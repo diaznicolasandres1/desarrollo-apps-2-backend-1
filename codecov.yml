@@ -1,0 +1,32 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 1%
+    patch:
+      default:
+        target: 80%
+        threshold: 1%
+
+comment:
+  layout: "header,diff,files,footer"
+  behavior: default
+  require_changes: false
+  require_base: no
+  require_head: yes
+
+github_checks:
+  annotations: true
+
+ignore:
+  - "src/app.module.ts"
+  - "src/main.ts"
+  - "**/*.module.ts"
+  - "**/*.dto.ts"
+  - "**/*.interface.ts"
+  - "**/*.schema.ts"
+  - "**/*.token.ts"
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/coverage/**"
