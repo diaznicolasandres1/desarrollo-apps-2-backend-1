@@ -91,6 +91,10 @@ export class CreateCulturalPlaceDto {
   @IsString()
   name: string;
 
+  @ApiProperty({ example: 'Un espacio cultural dedicado a promover el arte contemporáneo y las expresiones culturales locales', description: 'Description of the cultural place' })
+  @IsString()
+  description: string;
+
   @ApiProperty({ example: 'Centro Cultural', enum: ['Museo', 'Cine', 'Centro Cultural', 'Teatro', 'Galería', 'Biblioteca', 'Auditorio'], description: 'Category of the cultural place' })
   @IsString()
   category: string;

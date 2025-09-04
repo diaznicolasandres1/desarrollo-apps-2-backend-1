@@ -11,6 +11,7 @@ describe('CulturalPlacesService', () => {
   const mockCulturalPlace = {
     _id: '507f1f77bcf86cd799439011',
     name: 'Museo de Arte Moderno',
+    description: 'Un museo dedicado al arte moderno y contemporáneo',
     category: 'Museo',
     characteristics: ['Exposiciones temporales'],
     schedules: {
@@ -69,6 +70,7 @@ describe('CulturalPlacesService', () => {
     it('should create a new cultural place', async () => {
       const createDto: CreateCulturalPlaceDto = {
         name: 'Museo de Arte',
+        description: 'Un museo dedicado al arte moderno',
         category: 'Museo',
         schedules: mockCulturalPlace.schedules,
         contact: mockCulturalPlace.contact,
@@ -88,6 +90,7 @@ describe('CulturalPlacesService', () => {
     it('should throw ConflictException if name already exists', async () => {
       const createDto: CreateCulturalPlaceDto = {
         name: 'Museo Existente',
+        description: 'Un museo existente',
         category: 'Museo',
         schedules: mockCulturalPlace.schedules,
         contact: mockCulturalPlace.contact,
@@ -102,6 +105,7 @@ describe('CulturalPlacesService', () => {
     it('should throw BadRequestException for invalid coordinates', async () => {
       const createDto: CreateCulturalPlaceDto = {
         name: 'Museo de Arte',
+        description: 'Un museo de arte',
         category: 'Museo',
         schedules: mockCulturalPlace.schedules,
         contact: {

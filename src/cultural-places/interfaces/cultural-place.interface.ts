@@ -27,6 +27,7 @@ export interface Schedules {
 
 export interface CulturalPlaceInterface {
   name: string;
+  description: string;
   category: string;
   characteristics: string[];
   schedules: Schedules;
@@ -38,6 +39,7 @@ export interface CulturalPlaceInterface {
 
 export interface CreateCulturalPlaceDto {
   name: string;
+  description: string;
   category: string;
   characteristics?: string[];
   schedules: Schedules;
@@ -49,6 +51,7 @@ export interface CreateCulturalPlaceDto {
 
 export interface UpdateCulturalPlaceDto {
   name?: string;
+  description?: string;
   category?: string;
   characteristics?: string[];
   schedules?: Schedules;

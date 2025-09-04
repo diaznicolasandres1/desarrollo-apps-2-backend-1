@@ -12,6 +12,7 @@ describe('CulturalPlacesController', () => {
   const mockCulturalPlace = {
     _id: '507f1f77bcf86cd799439011',
     name: 'Modern Art Museum',
+    description: 'A museum dedicated to modern and contemporary art',
     category: 'Museum',
     characteristics: ['Temporary exhibitions'],
     schedules: {
@@ -70,6 +71,7 @@ describe('CulturalPlacesController', () => {
     it('should create a cultural place', async () => {
       const createDto: CreateCulturalPlaceDto = {
         name: 'Art Museum',
+        description: 'An art museum showcasing contemporary works',
         category: 'Museum',
         schedules: mockCulturalPlace.schedules,
         contact: mockCulturalPlace.contact,

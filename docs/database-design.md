@@ -62,6 +62,7 @@ Aplicación web para mostrar y gestionar lugares culturales de una ciudad, inclu
 {
   _id: ObjectId,
   name: String,                    // Nombre del lugar
+  description: String,             // Descripción del lugar cultural
   category: String,                // Museo, Cine, Centro Cultural, Teatro, etc.
   characteristics: [String],        // Array de características
   schedules: {
