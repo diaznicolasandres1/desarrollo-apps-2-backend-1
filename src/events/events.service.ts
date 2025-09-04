@@ -200,7 +200,7 @@ export class EventsService {
 
     return ticketTypeData.initialQuantity - ticketTypeData.soldQuantity;
   }
-ue entidad
+
   async updateTicketCount(eventId: string, ticketType: string, quantity: number): Promise<void> {
     const result = await this.repository.updateTicketCount(eventId, ticketType, quantity);
     

@@ -56,7 +56,7 @@ export class TicketsService {
       const ticket = await this.repository.create(ticketData);
       tickets.push(ticket);
     }
-ino 
+
     // Update ticket count in event
     await this.eventsService.updateTicketCount(eventId, ticketType, quantity);
 
