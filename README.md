@@ -33,6 +33,12 @@ API para gestionar lugares culturales de Buenos Aires (museos, centros culturale
 - **Unit Tests** with high coverage
 - **Clean Architecture** implementation
 
+### 🆕 Recent Updates (v1.1)
+- **📝 Cultural Place Descriptions**: Added detailed descriptions to all cultural places
+- **🎭 Enhanced Event Responses**: Events now include complete cultural place information
+- **🚀 Improved Frontend Experience**: Reduced API calls with populated data
+- **📚 Updated Documentation**: Complete API examples and guides
+
 ### 🚧 In Progress
 - **User Authentication** and authorization
 
@@ -221,7 +227,22 @@ npm run test:watch
 ```typescript
 {
   _id: ObjectId;            // MongoDB ObjectId
-  culturalPlaceId: ObjectId; // Reference to Cultural Place
+  culturalPlaceId: {         // Populated Cultural Place object
+    _id: ObjectId;           // Cultural Place ID
+    name: string;            // Cultural Place name
+    description: string;     // Cultural Place description
+    category: string;        // Cultural Place category
+    characteristics: string[]; // Cultural Place features
+    contact: {               // Cultural Place contact info
+      address: string;
+      coordinates: { lat: number, lng: number };
+      phone: string;
+      website: string;
+      email: string;
+    };
+    image: string;           // Cultural Place image
+    rating: number;          // Cultural Place rating
+  };
   name: string;              // Event name
   description: string;       // Event description
   date: Date;               // Event date
@@ -292,6 +313,48 @@ npm run test:watch
 ## 📝 License
 
 This project is licensed under the MIT License.
+
+## 🆕 Recent Updates (v1.1)
+
+### 🎯 What's New
+
+**Enhanced Event Responses**: Events now include complete cultural place information, eliminating the need for additional API calls from the frontend.
+
+**Before:**
+```json
+{
+  "culturalPlaceId": "68b8d2e112a45cdbc2ec9856"
+}
+```
+
+**After:**
+```json
+{
+  "culturalPlaceId": {
+    "_id": "68b8d2e112a45cdbc2ec9856",
+    "name": "Centro Cultural Raices",
+    "description": "Un centro cultural que ofrece servicios de biblioteca...",
+    "category": "Centro Cultural",
+    "characteristics": ["Servicios de Biblioteca", "Proyecciones de Cine", "Galería de Arte"],
+    "contact": {
+      "address": "Agrelo 3045",
+      "coordinates": {"lat": -34.61724004, "lng": -58.40879856},
+      "phone": "49316157",
+      "website": "https://example.com",
+      "email": "info@lugar.com"
+    },
+    "image": "https://picsum.photos/800/600?random=756",
+    "rating": 3.3
+  }
+}
+```
+
+### 📚 Documentation
+
+- **API Examples**: [docs/api-curl-examples.md](docs/api-curl-examples.md)
+- **Frontend Guide**: [docs/frontend-quick-reference.md](docs/frontend-quick-reference.md)
+- **Recent Updates**: [docs/recent-updates.md](docs/recent-updates.md)
+- **Database Design**: [docs/database-design.md](docs/database-design.md)
 
 ## 📞 Support
 

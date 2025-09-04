@@ -104,7 +104,7 @@ Aplicación web para mostrar y gestionar lugares culturales de una ciudad, inclu
 ```javascript
 {
   _id: ObjectId,
-  culturalPlaceId: ObjectId,       // Referencia al lugar cultural
+  culturalPlaceId: ObjectId,       // Referencia al lugar cultural (populated)
   name: String,                    // Nombre del evento
   description: String,             // Descripción del evento
   date: Date,                      // Fecha del evento
@@ -125,9 +125,11 @@ Aplicación web para mostrar y gestionar lugares culturales de una ciudad, inclu
 ```
 
 **Campos Clave:**
-- `culturalPlaceId`: Referencia al lugar cultural
+- `culturalPlaceId`: Referencia al lugar cultural (se popula automáticamente con información completa)
 - `ticketTypes`: Array de tipos de entrada disponibles
 - `date` y `time`: Información temporal del evento
+
+**💡 Mejora implementada:** Los eventos ahora incluyen automáticamente la información completa del centro cultural relacionado (nombre, descripción, categoría, características, contacto, imagen, calificación) gracias al `populate` de Mongoose.
 
 ### **3. Colección: `users`**
 

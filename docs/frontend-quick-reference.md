@@ -2,6 +2,8 @@
 
 ## 📍 Operaciones Principales
 
+> **💡 Nota importante:** Los eventos ahora incluyen información completa del centro cultural relacionado. El campo `culturalPlaceId` ya no es solo un ID, sino un objeto con toda la información del lugar cultural.
+
 ### 1. 🎭 Traer Eventos
 
 #### Obtener todos los eventos
@@ -226,7 +228,22 @@ curl -X PATCH "https://desarrollo-apps-2-backend.onrender.com/api/v1/tickets/68b
 ```json
 {
   "_id": "68b8d2e612a45cdbc2ec987e",
-  "culturalPlaceId": "68b8d2e112a45cdbc2ec9856",
+  "culturalPlaceId": {
+    "_id": "68b8d2e112a45cdbc2ec9856",
+    "name": "Centro Cultural Raices",
+    "description": "Un centro cultural que ofrece servicios de biblioteca, proyecciones de cine y galería de arte",
+    "category": "Centro Cultural",
+    "characteristics": ["Servicios de Biblioteca", "Proyecciones de Cine", "Galería de Arte"],
+    "contact": {
+      "address": "Agrelo 3045",
+      "coordinates": {"lat": -34.61724004, "lng": -58.40879856},
+      "phone": "49316157",
+      "website": "https://example.com",
+      "email": "info@lugar.com"
+    },
+    "image": "https://picsum.photos/800/600?random=756",
+    "rating": 3.3
+  },
   "name": "Concierto de Jazz",
   "description": "Una noche mágica de jazz con artistas locales",
   "date": "2025-02-15T00:00:00.000Z",
