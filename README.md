@@ -24,6 +24,7 @@ API para gestionar lugares culturales de Buenos Aires (museos, centros culturale
 
 ### ✅ Implemented
 - **CRUD Operations** for Cultural Places
+- **Events Management** system with ticket types
 - **Advanced Filtering** (by category, rating, location)
 - **Geospatial Queries** (nearby places)
 - **Schedule Management** (open/closed days)
@@ -32,9 +33,8 @@ API para gestionar lugares culturales de Buenos Aires (museos, centros culturale
 - **Clean Architecture** implementation
 
 ### 🚧 In Progress
-- **Events Management** system
 - **User Authentication** and authorization
-- **Ticket System** for events
+- **Ticket Purchase** system
 
 ## 🏗 Architecture
 
@@ -49,6 +49,15 @@ src/
 │   ├── cultural-places.controller.ts
 │   ├── cultural-places.service.ts
 │   └── cultural-places.module.ts
+├── events/                  # Events module
+│   ├── dto/                 # Data Transfer Objects
+│   ├── interfaces/          # Repository interfaces
+│   ├── repositories/        # Data access layer
+│   ├── schemas/            # MongoDB schemas
+│   ├── __tests__/          # Unit tests
+│   ├── events.controller.ts
+│   ├── events.service.ts
+│   └── events.module.ts
 ├── users/                   # Users module
 ├── config/                  # Configuration files
 └── main.ts                  # Application entry point
@@ -101,32 +110,9 @@ npm run start:prod
 
 ## 🧪 Testing
 
-### Test Coverage
-
-```bash
-npm run test:cov
-```
-
-**Current Coverage:**
-- **Statements:** 38.73%
-- **Branches:** 40.29%
-- **Functions:** 37%
-- **Lines:** 40.54%
-
-**Coverage by Module:**
-- **Cultural Places:** 79.43% (statements)
-- **Events:** 59.22% (statements)
-- **Services:** High coverage (81-92%)
-- **Controllers:** High coverage (100%)
-
-> Note: Coverage is lower because we focus on testing business logic (services) rather than infrastructure code (schemas, repositories).
-
 ```bash
 # Run all tests
 npm test
-
-# Run tests with coverage
-npm run test:cov
 
 # Run tests in watch mode
 npm run test:watch
@@ -147,6 +133,21 @@ npm run test:watch
 | `GET` | `/api/v1/cultural-places/open/:day` | Get open places by day |
 | `GET` | `/api/v1/cultural-places/top-rated` | Get top rated places |
 | `GET` | `/api/v1/cultural-places/nearby` | Get nearby places |
+| `PATCH` | `/api/v1/cultural-places/:id/toggle-active` | Toggle active status |
+
+### Events
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/v1/events` | Create new event |
+| `GET` | `/api/v1/events` | Get all events with filtering |
+| `GET` | `/api/v1/events/active` | Get active events only |
+| `GET` | `/api/v1/events/:id` | Get event by ID |
+| `PATCH` | `/api/v1/events/:id` | Update event |
+| `DELETE` | `/api/v1/events/:id` | Delete event |
+| `GET` | `/api/v1/events/cultural-place/:culturalPlaceId` | Get events by place |
+| `GET` | `/api/v1/events/date-range/:startDate/:endDate` | Get events by date range |
+| `PATCH` | `/api/v1/events/:id/toggle-active` | Toggle event status |
 
 ### Query Parameters
 
@@ -161,12 +162,18 @@ npm run test:watch
 ### Cultural Place
 ```typescript
 {
+  _id: ObjectId;            // MongoDB ObjectId
   name: string;              // Place name
-  category: string;          // Museo, Cine, Centro Cultural, etc.
+  category: string;          // Museo, Cine, Centro Cultural, Teatro, etc.
   characteristics: string[]; // Features list
   schedules: {              // Weekly schedules
     monday: { open: string, close: string, closed: boolean };
-    // ... other days
+    tuesday: { open: string, close: string, closed: boolean };
+    wednesday: { open: string, close: string, closed: boolean };
+    thursday: { open: string, close: string, closed: boolean };
+    friday: { open: string, close: string, closed: boolean };
+    saturday: { open: string, close: string, closed: boolean };
+    sunday: { open: string, close: string, closed: boolean };
   };
   contact: {                // Contact information
     address: string;
@@ -178,6 +185,33 @@ npm run test:watch
   image: string;            // Image URL
   rating: number;           // Rating (0-5)
   isActive: boolean;        // Active status
+  createdAt: Date;          // Creation timestamp
+  updatedAt: Date;          // Last update timestamp
+}
+```
+
+### Event
+```typescript
+{
+  _id: ObjectId;            // MongoDB ObjectId
+  culturalPlaceId: ObjectId; // Reference to Cultural Place
+  name: string;              // Event name
+  description: string;       // Event description
+  date: Date;               // Event date
+  time: string;              // Event time (HH:MM format)
+  ticketTypes: [             // Available ticket types
+    {
+      type: string;          // 'general', 'vip', 'jubilados', 'niños'
+      price: number;         // Ticket price
+      initialQuantity: number; // Initial available quantity
+      soldQuantity: number;   // Sold quantity
+      isActive: boolean;      // Ticket type active status
+    }
+  ];
+  isActive: boolean;         // Event active status
+  createdAt: Date;           // Creation timestamp
+  updatedAt: Date;          // Last update timestamp
+  availableQuantity: number; // Virtual field: calculated available tickets
 }
 ```
 
@@ -206,17 +240,9 @@ npm run test:watch
 
 - **✅ Phase 1:** CRUD Operations (Complete)
 - **✅ Phase 2:** Advanced Features (Complete)
-- **🔄 Phase 3:** Events Management (In Progress)
+- **✅ Phase 3:** Events Management (Complete)
 - **⏳ Phase 4:** User Management (Pending)
-- **⏳ Phase 5:** Ticket System (Pending)
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+- **⏳ Phase 5:** Ticket Purchase System (Pending)
 
 ## 📝 License
 
