@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { CulturalPlacesModule } from './cultural-places/cultural-places.module';
+import { EventsModule } from './events/events.module';
 import { getDatabaseConfig } from './config/database.config';
 
 @Module({
@@ -22,6 +23,7 @@ import { getDatabaseConfig } from './config/database.config';
     }),
     UsersModule,
     CulturalPlacesModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
