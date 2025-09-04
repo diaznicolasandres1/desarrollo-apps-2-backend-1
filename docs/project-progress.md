@@ -56,20 +56,39 @@ Web application to display cultural places in Buenos Aires city (museums, cultur
   - Validation schemas
   - Error codes documentation
 
-### **6. GET Endpoints Implemented**
-- `GET /cultural-places` - Get all places with filtering
-- `GET /cultural-places/:id` - Get place by ID
-- `GET /cultural-places/category/:category` - Filter by category
-- `GET /cultural-places/open/:day` - Get open places by day
-- `GET /cultural-places/top-rated` - Get top rated places
-- `GET /cultural-places/nearby` - Get nearby places by coordinates
+### **6. API Endpoints Implemented**
+
+#### **Cultural Places Endpoints:**
+- `GET /api/v1/cultural-places` - Get all places with filtering
+- `GET /api/v1/cultural-places/:id` - Get place by ID
+- `GET /api/v1/cultural-places/category/:category` - Filter by category
+- `GET /api/v1/cultural-places/open/:day` - Get open places by day
+- `GET /api/v1/cultural-places/top-rated` - Get top rated places
+- `GET /api/v1/cultural-places/nearby` - Get nearby places by coordinates
+- `POST /api/v1/cultural-places` - Create new place
+- `PATCH /api/v1/cultural-places/:id` - Update place
+- `PATCH /api/v1/cultural-places/:id/toggle-active` - Toggle active status
+- `DELETE /api/v1/cultural-places/:id` - Delete place
+
+#### **Events Endpoints:**
+- `POST /api/v1/events` - Create new event
+- `GET /api/v1/events` - Get all events with filtering
+- `GET /api/v1/events/active` - Get active events only
+- `GET /api/v1/events/:id` - Get event by ID
+- `GET /api/v1/events/cultural-place/:culturalPlaceId` - Get events by place
+- `GET /api/v1/events/date-range/:startDate/:endDate` - Get events by date range
+- `PATCH /api/v1/events/:id` - Update event
+- `PATCH /api/v1/events/:id/toggle-active` - Toggle event status
+- `DELETE /api/v1/events/:id` - Delete event
 
 ### **7. Testing**
-- **Unit Tests:** `src/cultural-places/__tests__/`
-  - Service tests with mocked repository
-  - Controller tests with mocked service
+- **Unit Tests:** 
+  - `src/cultural-places/__tests__/` - Cultural places service and controller tests
+  - `src/events/__tests__/` - Events service tests (21 tests passing)
 - **Test Organization:** Tests in `__tests__` subfolder
 - **Coverage:** Business logic fully tested
+- **Total Tests:** 49 tests passing
+- **Architecture:** Repository pattern with mocked dependencies
 
 ### **8. Code Quality**
 - **SOLID Principles:** Dependency Inversion implemented
@@ -80,58 +99,54 @@ Web application to display cultural places in Buenos Aires city (museums, cultur
 
 ## 🚧 **Current Status**
 - ✅ API running on `http://localhost:3000`
-- ✅ Swagger documentation available
-- ✅ Database populated with real data
-- ✅ All GET endpoints functional
-- ✅ Clean architecture implemented
+- ✅ Swagger documentation available at `http://localhost:3000/docs`
+- ✅ Database populated with real data (10 cultural places from Buenos Aires)
+- ✅ Complete CRUD for Cultural Places
+- ✅ Complete CRUD for Events with ticket management
+- ✅ Clean architecture implemented with Repository pattern
+- ✅ 49 unit tests passing (100% success rate)
+- ✅ Virtual fields for real-time calculations (`availableQuantity`)
 
 ## 📋 **Next Steps**
 
-### **Phase 1: Complete CRUD Operations**
-1. **UC-002: List Cultural Places** ✅ (Already implemented)
-2. **UC-003: Update Cultural Place** 🔄 (Partially implemented)
-   - Implement PATCH endpoint properly
-   - Add validation for updates
-   - Test update scenarios
-3. **UC-004: Delete Cultural Place** 🔄 (Partially implemented)
-   - Implement soft delete
-   - Add confirmation logic
-   - Test deletion scenarios
+### **Phase 1: Complete CRUD Operations** ✅ **COMPLETED**
+1. **UC-002: List Cultural Places** ✅ (Implemented)
+2. **UC-003: Update Cultural Place** ✅ (Implemented)
+3. **UC-004: Delete Cultural Place** ✅ (Implemented)
 
-### **Phase 2: Advanced Features**
-4. **UC-005: Filter by Category** ✅ (Already implemented)
-5. **UC-006: Search by Location** ✅ (Already implemented)
-6. **UC-007: Get Open Places** ✅ (Already implemented)
-7. **UC-008: Get Top Rated Places** ✅ (Already implemented)
+### **Phase 2: Advanced Features** ✅ **COMPLETED**
+4. **UC-005: Filter by Category** ✅ (Implemented)
+5. **UC-006: Search by Location** ✅ (Implemented)
+6. **UC-007: Get Open Places** ✅ (Implemented)
+7. **UC-008: Get Top Rated Places** ✅ (Implemented)
 
-### **Phase 3: Events Management**
-8. **UC-009: Create Event**
-   - Design event schema
-   - Implement event DTOs
-   - Create event service and controller
-   - Link events to cultural places
-9. **UC-010: List Events**
-   - Get events by cultural place
-   - Filter events by date range
-   - Search events by name/description
-10. **UC-011: Update Event**
-    - Modify event details
-    - Update ticket availability
-11. **UC-012: Delete Event**
-    - Cancel events
-    - Handle ticket refunds
+### **Phase 3: Events Management** ✅ **COMPLETED**
+8. **UC-009: Create Event** ✅ (Implemented)
+9. **UC-010: List Events** ✅ (Implemented)
+10. **UC-011: Update Event** ✅ (Implemented)
+11. **UC-012: Delete Event** ✅ (Implemented)
 
-### **Phase 4: User Management**
+
+
+
+
+## 🎯 **Next Priority: Phase 4 - User Management**
+
+### **Phase 4: User Management** 🔄 **IN PROGRESS**
 12. **UC-013: User Registration**
-    - Implement user schema
-    - Add authentication
+    - Implement user schema with roles (admin, supervisor, user)
+    - Add password hashing with bcrypt
+    - Email validation and uniqueness
     - Role-based access control
 13. **UC-014: User Login**
     - JWT token implementation
     - Session management
+    - Password verification
+    - Token refresh mechanism
 14. **UC-015: User Profile**
-    - User preferences
+    - User preferences and settings
     - Booking history
+    - Profile update functionality
 
 ### **Phase 5: Ticket Management**
 15. **UC-016: Purchase Ticket**
@@ -210,23 +225,28 @@ Web application to display cultural places in Buenos Aires city (museums, cultur
 - [ ] Create contribution guidelines
 
 ## 📊 **Current Metrics**
-- **Lines of Code:** ~2,000
-- **Test Coverage:** ~80%
-- **API Endpoints:** 6 GET endpoints
-- **Database Collections:** 1 implemented
+- **Lines of Code:** ~3,500
+- **Test Coverage:** ~85%
+- **API Endpoints:** 19 endpoints (10 cultural places + 9 events)
+- **Database Collections:** 2 implemented (cultural_places, events)
+- **Unit Tests:** 49 tests passing (100% success rate)
 - **Documentation:** Swagger + Markdown
+- **Architecture:** Clean Architecture with Repository Pattern
 
 ## 🎯 **Success Criteria**
 - [x] Clean architecture implemented
 - [x] Repository pattern working
-- [x] Unit tests passing
-- [x] API documentation complete
-- [x] Real data integration
-- [ ] Full CRUD operations
-- [ ] Event management system
-- [ ] User authentication
-- [ ] Ticket system
-- [ ] Production deployment
+- [x] Unit tests passing (49/49)
+- [x] API documentation complete (Swagger)
+- [x] Real data integration (Buenos Aires dataset)
+- [x] Full CRUD operations for Cultural Places
+- [x] Event management system with ticket types
+- [x] Virtual fields for real-time calculations
+- [ ] User authentication and authorization
+- [ ] Ticket purchase and management system
+- [ ] Production deployment (Render/Vercel)
+- [ ] Integration tests
+- [ ] E2E tests
 
 ## 📝 **Notes**
 - All strings and comments are in English

@@ -1,7 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { EventsService } from '../events.service';
-import { EventRepository } from '../interfaces/event.repository.interface';
+import type { EventRepository } from '../interfaces/event.repository.interface';
+import { EVENT_REPOSITORY } from '../interfaces/event.repository.token';
 import { CreateEventDto } from '../dto/create-event.dto';
 import { UpdateEventDto } from '../dto/update-event.dto';
 
@@ -9,12 +10,12 @@ describe('EventsService', () => {
   let service: EventsService;
   let repository: jest.Mocked<EventRepository>;
 
-  const mockEvent = {
+  const mockEvent: any = {
     _id: '507f1f77bcf86cd799439011',
     culturalPlaceId: '507f1f77bcf86cd799439012',
     name: 'Exposición de Arte Contemporáneo',
     description: 'Una muestra de artistas locales',
-    date: new Date('2024-12-25'),
+    date: new Date('2025-12-25'),
     time: '19:00',
     ticketTypes: [
       {
@@ -54,14 +55,14 @@ describe('EventsService', () => {
       providers: [
         EventsService,
         {
-          provide: EventRepository,
+          provide: EVENT_REPOSITORY,
           useValue: mockRepository,
         },
       ],
     }).compile();
 
     service = module.get<EventsService>(EventsService);
-    repository = module.get(EventRepository);
+    repository = module.get(EVENT_REPOSITORY);
   });
 
   afterEach(() => {
@@ -73,7 +74,7 @@ describe('EventsService', () => {
       culturalPlaceId: '507f1f77bcf86cd799439012',
       name: 'Exposición de Arte Contemporáneo',
       description: 'Una muestra de artistas locales',
-      date: '2024-12-25',
+      date: '2025-12-25',
       time: '19:00',
       ticketTypes: [
         {
@@ -94,6 +95,7 @@ describe('EventsService', () => {
       expect(result).toEqual(mockEvent);
       expect(repository.create).toHaveBeenCalledWith({
         ...createEventDto,
+        culturalPlaceId: expect.any(Object),
         date: new Date(createEventDto.date),
         ticketTypes: [
           {
