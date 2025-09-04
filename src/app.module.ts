@@ -15,8 +15,8 @@ import { getDatabaseConfig } from './config/database.config';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        ...getDatabaseConfig(),
         uri: configService.get<string>('MONGODB_URI') || 'mongodb://localhost:27017/cultural-places',
+        ...getDatabaseConfig(),
       }),
       inject: [ConfigService],
     }),

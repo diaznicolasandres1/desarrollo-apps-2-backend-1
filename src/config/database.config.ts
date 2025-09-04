@@ -6,8 +6,6 @@ export const getDatabaseConfig = (): MongooseModuleOptions => {
   return {
     uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/cultural-places',
     ...(isProduction && {
-      ssl: true,
-      sslValidate: true,
       retryWrites: true,
       w: 'majority',
     }),
