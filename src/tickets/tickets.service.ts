@@ -1,15 +1,18 @@
 import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
+import { InsufficientTicketsException } from '../common/exceptions/insufficient-tickets.exception';
 import type { TicketRepository } from './interfaces/ticket.repository.interface';
 import { TICKET_REPOSITORY } from './interfaces/ticket.repository.token';
 import { PurchaseTicketDto } from './dto/purchase-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
 import { Ticket } from './schemas/ticket.schema';
 import { Types } from 'mongoose';
+import { EventsService } from '../events/events.service';
 
 @Injectable()
 export class TicketsService {
   constructor(
-    @Inject(TICKET_REPOSITORY) private readonly repository: TicketRepository
+    @Inject(TICKET_REPOSITORY) private readonly repository: TicketRepository,
+    private readonly eventsService: EventsService
   ) {}
 
 
@@ -22,8 +25,23 @@ export class TicketsService {
       throw new BadRequestException('Quantity must be between 1 and 10');
     }
 
-    // Check availability (this would need to be implemented with Event service)
-    // For now, we'll assume availability and create tickets
+    // Validate event exists, is active, and not expired
+    const event = await this.eventsService.validateEventForTicketPurchase(eventId);
+
+    // Check ticket availability
+    const isAvailable = await this.eventsService.checkTicketAvailability(eventId, ticketType, quantity);
+    if (!isAvailable) {
+      const availableQuantity = await this.eventsService.getTicketAvailability(eventId, ticketType);
+      throw new InsufficientTicketsException(eventId, ticketType, quantity, availableQuantity);
+    }
+
+    // Get ticket price from event
+    const ticketTypeData = event.ticketTypes.find(tt => tt.type === ticketType);
+    if (!ticketTypeData) {
+      throw new BadRequestException(`Ticket type ${ticketType} not available for this event`);
+    }
+    const ticketPrice = ticketTypeData.price;
+
     const tickets: Ticket[] = [];
 
     for (let i = 0; i < quantity; i++) {
@@ -31,7 +49,7 @@ export class TicketsService {
         eventId: new Types.ObjectId(eventId),
         userId: new Types.ObjectId(userId),
         ticketType,
-        price: this.getTicketPrice(ticketType), // This would come from Event
+        price: ticketPrice,
         status: 'active'
       };
       
@@ -161,14 +179,4 @@ export class TicketsService {
     return stats;
   }
 
-  private getTicketPrice(ticketType: string): number {
-    // This would typically come from the Event's ticketTypes
-    const prices = {
-      general: 1000,
-      vip: 2000,
-      jubilados: 500,
-      niños: 500
-    };
-    return prices[ticketType] || 1000;
-  }
 }

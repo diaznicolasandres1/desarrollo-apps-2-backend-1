@@ -5,10 +5,12 @@ import type { TicketRepository } from '../interfaces/ticket.repository.interface
 import { TICKET_REPOSITORY } from '../interfaces/ticket.repository.token';
 import { PurchaseTicketDto } from '../dto/purchase-ticket.dto';
 import { UpdateTicketDto } from '../dto/update-ticket.dto';
+import { EventsService } from '../../events/events.service';
 
 describe('TicketsService', () => {
   let service: TicketsService;
   let repository: jest.Mocked<TicketRepository>;
+  let module: TestingModule;
 
   const mockTicket: any = {
     _id: '507f1f77bcf86cd799439011',
@@ -39,12 +41,20 @@ describe('TicketsService', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    module = await Test.createTestingModule({
       providers: [
         TicketsService,
         {
           provide: TICKET_REPOSITORY,
           useValue: mockRepository,
+        },
+        {
+          provide: EventsService,
+          useValue: {
+            validateEventForTicketPurchase: jest.fn(),
+            checkTicketAvailability: jest.fn(),
+            getTicketAvailability: jest.fn(),
+          },
         },
       ],
     }).compile();
@@ -66,7 +76,27 @@ describe('TicketsService', () => {
     };
 
     it('should purchase tickets successfully', async () => {
+      const mockEvent: any = {
+        _id: '507f1f77bcf86cd799439012',
+        culturalPlaceId: '507f1f77bcf86cd799439015',
+        name: 'Test Event',
+        description: 'Test Description',
+        date: new Date('2025-12-25'),
+        time: '18:00',
+        isActive: true,
+        ticketTypes: [
+          { type: 'general', price: 1000, initialQuantity: 10, soldQuantity: 5 }
+        ]
+      };
+      
       const createdTickets = [mockTicket, { ...mockTicket, _id: '507f1f77bcf86cd799439014' }];
+      
+      // Mock EventsService methods
+      const eventsService = module.get(EventsService) as jest.Mocked<EventsService>;
+      eventsService.validateEventForTicketPurchase.mockResolvedValue(mockEvent);
+      eventsService.checkTicketAvailability.mockResolvedValue(true);
+      eventsService.getTicketAvailability.mockResolvedValue(5);
+      
       repository.create.mockResolvedValueOnce(createdTickets[0]);
       repository.create.mockResolvedValueOnce(createdTickets[1]);
 
@@ -100,6 +130,25 @@ describe('TicketsService', () => {
     it('should use default quantity of 1 when not specified', async () => {
       const dtoWithoutQuantity = { ...purchaseTicketDto };
       delete dtoWithoutQuantity.quantity;
+      
+      const mockEvent: any = {
+        _id: '507f1f77bcf86cd799439012',
+        culturalPlaceId: '507f1f77bcf86cd799439015',
+        name: 'Test Event',
+        description: 'Test Description',
+        date: new Date('2025-12-25'),
+        time: '18:00',
+        isActive: true,
+        ticketTypes: [
+          { type: 'general', price: 1000, initialQuantity: 10, soldQuantity: 5 }
+        ]
+      };
+      
+      // Mock EventsService methods
+      const eventsService = module.get(EventsService) as jest.Mocked<EventsService>;
+      eventsService.validateEventForTicketPurchase.mockResolvedValue(mockEvent);
+      eventsService.checkTicketAvailability.mockResolvedValue(true);
+      eventsService.getTicketAvailability.mockResolvedValue(5);
       
       repository.create.mockResolvedValue(mockTicket);
 
@@ -368,7 +417,7 @@ describe('TicketsService', () => {
   });
 
   describe('getTicketPrice', () => {
-    it('should return correct prices for different ticket types', () => {
+    it('should return correct prices for different ticket types', async () => {
       // This is a private method, but we can test it indirectly through purchaseTicket
       const purchaseDto = {
         eventId: '507f1f77bcf86cd799439012',
@@ -377,9 +426,29 @@ describe('TicketsService', () => {
         quantity: 1,
       };
 
+      const mockEvent: any = {
+        _id: '507f1f77bcf86cd799439012',
+        culturalPlaceId: '507f1f77bcf86cd799439015',
+        name: 'Test Event',
+        description: 'Test Description',
+        date: new Date('2025-12-25'),
+        time: '18:00',
+        isActive: true,
+        ticketTypes: [
+          { type: 'general', price: 1000, initialQuantity: 10, soldQuantity: 5 },
+          { type: 'vip', price: 2000, initialQuantity: 5, soldQuantity: 2 }
+        ]
+      };
+
+      // Mock EventsService methods
+      const eventsService = module.get(EventsService) as jest.Mocked<EventsService>;
+      eventsService.validateEventForTicketPurchase.mockResolvedValue(mockEvent);
+      eventsService.checkTicketAvailability.mockResolvedValue(true);
+      eventsService.getTicketAvailability.mockResolvedValue(3);
+
       repository.create.mockResolvedValue(mockTicket);
 
-      service.purchaseTicket(purchaseDto);
+      await service.purchaseTicket(purchaseDto);
 
       expect(repository.create).toHaveBeenCalledWith({
         eventId: expect.any(Object),
