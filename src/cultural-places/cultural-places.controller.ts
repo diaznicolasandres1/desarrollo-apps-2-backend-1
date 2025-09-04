@@ -11,7 +11,7 @@ import {
   HttpStatus,
   HttpCode,
 } from '@nestjs/common';
-import { ApiTags} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CulturalPlacesService } from './cultural-places.service';
 import { CreateCulturalPlaceDto } from './dto/create-cultural-place.dto';
 import { UpdateCulturalPlaceDto } from './dto/update-cultural-place.dto';
@@ -24,21 +24,40 @@ export class CulturalPlacesController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a new cultural place' })
+  @ApiResponse({ status: 201, description: 'Cultural place created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - validation error' })
+  @ApiResponse({ status: 409, description: 'Conflict - place with same name already exists' })
   async create(@Body() createCulturalPlaceDto: CreateCulturalPlaceDto) {
     return this.culturalPlacesService.create(createCulturalPlaceDto);
   }
 
   @Get()
+  @ApiOperation({ summary: 'Get all cultural places with optional filtering' })
+  @ApiQuery({ name: 'category', required: false, description: 'Filter by category' })
+  @ApiQuery({ name: 'isActive', required: false, description: 'Filter by active status' })
+  @ApiQuery({ name: 'minRating', required: false, description: 'Minimum rating filter' })
+  @ApiQuery({ name: 'maxRating', required: false, description: 'Maximum rating filter' })
+  @ApiResponse({ status: 200, description: 'List of cultural places retrieved successfully' })
   async findAll(@Query() query: CulturalPlaceQueryDto) {
     return this.culturalPlacesService.findAll(query);
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get a cultural place by ID' })
+  @ApiParam({ name: 'id', description: 'Cultural place ID' })
+  @ApiResponse({ status: 200, description: 'Cultural place retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Cultural place not found' })
   async findOne(@Param('id') id: string) {
     return this.culturalPlacesService.findOne(id);
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Update a cultural place' })
+  @ApiParam({ name: 'id', description: 'Cultural place ID' })
+  @ApiResponse({ status: 200, description: 'Cultural place updated successfully' })
+  @ApiResponse({ status: 404, description: 'Cultural place not found' })
+  @ApiResponse({ status: 400, description: 'Bad request - validation error' })
   async update(
     @Param('id') id: string,
     @Body() updateCulturalPlaceDto: UpdateCulturalPlaceDto,

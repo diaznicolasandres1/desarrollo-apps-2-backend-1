@@ -167,6 +167,61 @@ describe('CulturalPlacesService', () => {
     });
   });
 
+  describe('update', () => {
+    it('should update a cultural place', async () => {
+      const updateDto = {
+        name: 'Museo de Arte Actualizado',
+        rating: 4.8,
+      };
+      const updatedPlace = { ...mockCulturalPlace, ...updateDto };
+
+      mockRepository.findById.mockResolvedValue(mockCulturalPlace);
+      mockRepository.update.mockResolvedValue(updatedPlace);
+
+      const result = await service.update('507f1f77bcf86cd799439011', updateDto);
+
+      expect(result).toEqual(updatedPlace);
+      expect(repository.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
+    });
+
+    it('should throw NotFoundException if place not found', async () => {
+      const updateDto = { name: 'Nuevo Nombre' };
+
+      mockRepository.findById.mockResolvedValue(null);
+
+      await expect(service.update('invalid-id', updateDto)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should validate coordinates if provided', async () => {
+      const updateDto = {
+        contact: {
+          coordinates: { lat: 100, lng: 0 }, // Invalid latitude
+        },
+      };
+
+      mockRepository.findById.mockResolvedValue(mockCulturalPlace);
+
+      await expect(service.update('507f1f77bcf86cd799439011', updateDto)).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('remove', () => {
+    it('should remove a cultural place', async () => {
+      mockRepository.findById.mockResolvedValue(mockCulturalPlace);
+      mockRepository.delete.mockResolvedValue(true);
+
+      await service.remove('507f1f77bcf86cd799439011');
+
+      expect(repository.delete).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+    });
+
+    it('should throw NotFoundException if place not found', async () => {
+      mockRepository.findById.mockResolvedValue(null);
+
+      await expect(service.remove('invalid-id')).rejects.toThrow(NotFoundException);
+    });
+  });
+
   describe('toggleActive', () => {
     it('should toggle active status', async () => {
       const inactivePlace = { ...mockCulturalPlace, isActive: false };
