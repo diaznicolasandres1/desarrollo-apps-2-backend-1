@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { CulturalPlacesModule } from './cultural-places/cultural-places.module';
+import { getDatabaseConfig } from './config/database.config';
 
 @Module({
   imports: [
@@ -14,7 +15,8 @@ import { CulturalPlacesModule } from './cultural-places/cultural-places.module';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI'),
+        ...getDatabaseConfig(),
+        uri: configService.get<string>('MONGODB_URI') || 'mongodb://localhost:27017/cultural-places',
       }),
       inject: [ConfigService],
     }),

@@ -1,194 +1,206 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Cultural Places API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API para gestionar lugares culturales de Buenos Aires (museos, centros culturales, teatros, cines, etc.)
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🚀 Live Demo
 
-## Description
+- **API:** [https://cultural-places-api.onrender.com](https://cultural-places-api.onrender.com)
+- **Documentación:** [https://cultural-places-api.onrender.com/docs](https://cultural-places-api.onrender.com/docs)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 🛠 Tech Stack
 
-## Project setup
+- **Framework:** NestJS
+- **Database:** MongoDB with Mongoose
+- **Language:** TypeScript
+- **Documentation:** Swagger/OpenAPI
+- **Testing:** Jest
+- **Validation:** Class-validator
+- **Architecture:** Clean Architecture with Repository Pattern
 
-```bash
-$ npm install
+## 📋 Features
+
+### ✅ Implemented
+- **CRUD Operations** for Cultural Places
+- **Advanced Filtering** (by category, rating, location)
+- **Geospatial Queries** (nearby places)
+- **Schedule Management** (open/closed days)
+- **API Documentation** with Swagger
+- **Unit Tests** with high coverage
+- **Clean Architecture** implementation
+
+### 🚧 In Progress
+- **Events Management** system
+- **User Authentication** and authorization
+- **Ticket System** for events
+
+## 🏗 Architecture
+
+```
+src/
+├── cultural-places/          # Cultural Places module
+│   ├── dto/                 # Data Transfer Objects
+│   ├── interfaces/          # Repository interfaces
+│   ├── repositories/        # Data access layer
+│   ├── schemas/            # MongoDB schemas
+│   ├── __tests__/          # Unit tests
+│   ├── cultural-places.controller.ts
+│   ├── cultural-places.service.ts
+│   └── cultural-places.module.ts
+├── users/                   # Users module
+├── config/                  # Configuration files
+└── main.ts                  # Application entry point
 ```
 
-## Compile and run the project
+## 🚀 Getting Started
 
+### Prerequisites
+- Node.js (v18 or higher)
+- MongoDB (local or Atlas)
+- npm or yarn
+
+### Installation
+
+1. **Clone the repository**
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+git clone <repository-url>
+cd desarrollo-apps-2-backend
 ```
 
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
-
-# Desarrollo Apps 2 - Backend
-
-Backend desarrollado con NestJS y MongoDB Atlas.
-
-## Configuración del Entorno
-
-### Prerrequisitos
-
-- Node.js 20.x o superior
-- npm
-- Cuenta de MongoDB Atlas
-
-### Instalación
-
-1. Clona el repositorio
-2. Instala las dependencias:
+2. **Install dependencies**
 ```bash
 npm install
 ```
 
-### Configuración de MongoDB Atlas
-
-1. Crea una cuenta en [MongoDB Atlas](https://www.mongodb.com/atlas)
-2. Crea un nuevo cluster
-3. Configura un usuario de base de datos
-4. Obtén tu connection string
-
-### Variables de Entorno
-
-Copia el archivo `env.example` a `.env` y configura las variables:
-
+3. **Environment setup**
 ```bash
-cp env.example .env
-```
+# Copy environment variables
+cp .env.example .env
 
-Edita el archivo `.env` con tu connection string de MongoDB Atlas:
-
-```env
-# MongoDB Atlas Connection String
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority
-
-# Application Port
+# Edit .env with your MongoDB URI
+MONGODB_URI=mongodb://localhost:27017/cultural-places
 PORT=3000
-
-# Environment
 NODE_ENV=development
 ```
 
-**Importante:** Reemplaza `username`, `password`, `cluster`, y `database` con tus valores reales de MongoDB Atlas.
-
-## Ejecución
-
-### Desarrollo
+4. **Run the application**
 ```bash
+# Development
 npm run start:dev
-```
 
-### Producción
-```bash
+# Production
+npm run build
 npm run start:prod
 ```
 
-## Docker
+5. **Access the API**
+- **API:** http://localhost:3000/api/v1
+- **Documentation:** http://localhost:3000/docs
 
-Para ejecutar con Docker:
+## 🧪 Testing
 
 ```bash
-docker-compose up --build
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm run test:cov
+
+# Run tests in watch mode
+npm run test:watch
 ```
 
-Asegúrate de tener la variable `MONGODB_URI` configurada en tu entorno antes de ejecutar Docker.
+## 📚 API Endpoints
 
-## Estructura del Proyecto
+### Cultural Places
 
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/v1/cultural-places` | Get all places with filtering |
+| `POST` | `/api/v1/cultural-places` | Create new place |
+| `GET` | `/api/v1/cultural-places/:id` | Get place by ID |
+| `PATCH` | `/api/v1/cultural-places/:id` | Update place |
+| `DELETE` | `/api/v1/cultural-places/:id` | Delete place |
+| `GET` | `/api/v1/cultural-places/category/:category` | Filter by category |
+| `GET` | `/api/v1/cultural-places/open/:day` | Get open places by day |
+| `GET` | `/api/v1/cultural-places/top-rated` | Get top rated places |
+| `GET` | `/api/v1/cultural-places/nearby` | Get nearby places |
+
+### Query Parameters
+
+- `category`: Filter by category (Museo, Cine, Centro Cultural, etc.)
+- `isActive`: Filter by active status (true/false)
+- `minRating`: Minimum rating filter (0-5)
+- `maxRating`: Maximum rating filter (0-5)
+- `lat`, `lng`, `radius`: For nearby places search
+
+## 🗄 Database Schema
+
+### Cultural Place
+```typescript
+{
+  name: string;              // Place name
+  category: string;          // Museo, Cine, Centro Cultural, etc.
+  characteristics: string[]; // Features list
+  schedules: {              // Weekly schedules
+    monday: { open: string, close: string, closed: boolean };
+    // ... other days
+  };
+  contact: {                // Contact information
+    address: string;
+    coordinates: { lat: number, lng: number };
+    phone: string;
+    website: string;
+    email: string;
+  };
+  image: string;            // Image URL
+  rating: number;           // Rating (0-5)
+  isActive: boolean;        // Active status
+}
 ```
-src/
-├── app.controller.ts
-├── app.module.ts
-├── app.service.ts
-├── main.ts
-└── users/
-    ├── user/
-    │   ├── user.controller.ts
-    │   └── user.service.ts
-    ├── user.schema.ts
-    └── users.module.ts
-```
 
-## API Endpoints
+## 🚀 Deployment
 
-- `GET /users` - Obtener todos los usuarios
-- `POST /users` - Crear un nuevo usuario
-- `GET /users/:id` - Obtener un usuario por ID
-- `PUT /users/:id` - Actualizar un usuario
-- `DELETE /users/:id` - Eliminar un usuario
+### Render (Recommended)
+
+1. **Connect your GitHub repository** to Render
+2. **Create a new Web Service**
+3. **Configure environment variables:**
+   - `NODE_ENV`: production
+   - `MONGODB_URI`: Your MongoDB Atlas connection string
+   - `PORT`: 10000 (Render default)
+4. **Build Command:** `npm install && npm run build`
+5. **Start Command:** `npm run start:prod`
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NODE_ENV` | Environment mode | development |
+| `PORT` | Server port | 3000 |
+| `MONGODB_URI` | MongoDB connection string | localhost |
+
+## 📊 Project Status
+
+- **✅ Phase 1:** CRUD Operations (Complete)
+- **✅ Phase 2:** Advanced Features (Complete)
+- **🔄 Phase 3:** Events Management (In Progress)
+- **⏳ Phase 4:** User Management (Pending)
+- **⏳ Phase 5:** Ticket System (Pending)
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License.
+
+## 📞 Support
+
+- **Email:** your-email@example.com
+- **Issues:** [GitHub Issues](https://github.com/your-username/repo-name/issues)
+- **Documentation:** [API Docs](https://cultural-places-api.onrender.com/docs)
