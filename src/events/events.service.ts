@@ -7,6 +7,7 @@ import { EVENT_REPOSITORY } from './interfaces/event.repository.token';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { Event } from './schemas/event.schema';
+import { EventWithCulturalPlace } from './interfaces/event-with-cultural-place.interface';
 import { Types } from 'mongoose';
 
 @Injectable()
@@ -32,11 +33,11 @@ export class EventsService {
     return this.repository.create(eventData);
   }
 
-  async findAll(query?: any): Promise<Event[]> {
+  async findAll(query?: any): Promise<any[]> {
     return this.repository.findAll(query);
   }
 
-  async findOne(id: string): Promise<Event> {
+  async findOne(id: string): Promise<any> {
     const event = await this.repository.findById(id);
     if (!event) {
       throw new NotFoundException('Event not found');
@@ -44,11 +45,11 @@ export class EventsService {
     return event;
   }
 
-  async findByCulturalPlace(culturalPlaceId: string): Promise<Event[]> {
+  async findByCulturalPlace(culturalPlaceId: string): Promise<any[]> {
     return this.repository.findByCulturalPlace(culturalPlaceId);
   }
 
-  async findByDateRange(startDate: Date, endDate: Date): Promise<Event[]> {
+  async findByDateRange(startDate: Date, endDate: Date): Promise<any[]> {
     return this.repository.findByDateRange(startDate, endDate);
   }
 

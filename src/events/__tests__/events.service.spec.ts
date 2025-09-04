@@ -12,7 +12,22 @@ describe('EventsService', () => {
 
   const mockEvent: any = {
     _id: '507f1f77bcf86cd799439011',
-    culturalPlaceId: '507f1f77bcf86cd799439012',
+    culturalPlaceId: {
+      _id: '507f1f77bcf86cd799439012',
+      name: 'Centro Cultural Raices',
+      description: 'Un centro cultural que ofrece servicios de biblioteca, proyecciones de cine y galería de arte',
+      category: 'Centro Cultural',
+      characteristics: ['Servicios de Biblioteca', 'Proyecciones de Cine', 'Galería de Arte'],
+      contact: {
+        address: 'Agrelo 3045',
+        coordinates: { lat: -34.61724004, lng: -58.40879856 },
+        phone: '49316157',
+        website: 'https://example.com',
+        email: 'info@lugar.com'
+      },
+      image: 'https://picsum.photos/800/600?random=756',
+      rating: 3.3
+    },
     name: 'Exposición de Arte Contemporáneo',
     description: 'Una muestra de artistas locales',
     date: new Date('2025-12-25'),

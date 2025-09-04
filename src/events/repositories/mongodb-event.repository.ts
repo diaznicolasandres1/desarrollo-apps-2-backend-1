@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Event, EventDocument } from '../schemas/event.schema';
 import { EventRepository } from '../interfaces/event.repository.interface';
+import { EventWithCulturalPlace } from '../interfaces/event-with-cultural-place.interface';
 
 @Injectable()
 export class MongoDBEventRepository implements EventRepository {
@@ -15,7 +16,7 @@ export class MongoDBEventRepository implements EventRepository {
     return createdEvent.save();
   }
 
-  async findAll(query?: any): Promise<Event[]> {
+  async findAll(query?: any): Promise<any[]> {
     const filter: any = {};
     
     if (query?.culturalPlaceId) {
@@ -33,21 +34,29 @@ export class MongoDBEventRepository implements EventRepository {
       };
     }
 
-    return this.eventModel.find(filter).sort({ date: 1 }).exec();
-  }
-
-  async findById(id: string): Promise<Event | null> {
-    return this.eventModel.findById(id).exec();
-  }
-
-  async findByCulturalPlace(culturalPlaceId: string): Promise<Event[]> {
     return this.eventModel
-      .find({ culturalPlaceId: new Types.ObjectId(culturalPlaceId) })
+      .find(filter)
+      .populate('culturalPlaceId', 'name description category characteristics contact image rating')
       .sort({ date: 1 })
       .exec();
   }
 
-  async findByDateRange(startDate: Date, endDate: Date): Promise<Event[]> {
+  async findById(id: string): Promise<any> {
+    return this.eventModel
+      .findById(id)
+      .populate('culturalPlaceId', 'name description category characteristics contact image rating')
+      .exec();
+  }
+
+  async findByCulturalPlace(culturalPlaceId: string): Promise<any[]> {
+    return this.eventModel
+      .find({ culturalPlaceId: new Types.ObjectId(culturalPlaceId) })
+      .populate('culturalPlaceId', 'name description category characteristics contact image rating')
+      .sort({ date: 1 })
+      .exec();
+  }
+
+  async findByDateRange(startDate: Date, endDate: Date): Promise<any[]> {
     return this.eventModel
       .find({
         date: {
@@ -56,13 +65,15 @@ export class MongoDBEventRepository implements EventRepository {
         },
         isActive: true
       })
+      .populate('culturalPlaceId', 'name description category characteristics contact image rating')
       .sort({ date: 1 })
       .exec();
   }
 
-  async findActiveEvents(): Promise<Event[]> {
+  async findActiveEvents(): Promise<any[]> {
     return this.eventModel
       .find({ isActive: true })
+      .populate('culturalPlaceId', 'name description category characteristics contact image rating')
       .sort({ date: 1 })
       .exec();
   }
