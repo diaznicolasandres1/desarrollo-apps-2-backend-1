@@ -1,0 +1,2 @@
+# This directory is required by Vercel for deployment
+# This is a NestJS backend API, so this directory can remain empty
