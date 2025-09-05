@@ -244,7 +244,7 @@ Web application to display cultural places in Buenos Aires city (museums, cultur
 - [x] Virtual fields for real-time calculations
 - [ ] User authentication and authorization
 - [ ] Ticket purchase and management system
-- [ ] Production deployment (Render/Vercel)
+- [ ] Production deployment (Render)
 - [ ] Integration tests
 - [ ] E2E tests
 
