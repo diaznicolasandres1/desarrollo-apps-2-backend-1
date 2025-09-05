@@ -35,7 +35,6 @@ export interface CulturalPlaceInterface {
   image: string;
   rating: number;
   isActive: boolean;
-  color: string;
 }
 
 export interface CreateCulturalPlaceDto {

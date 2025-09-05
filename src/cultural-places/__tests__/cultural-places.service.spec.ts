@@ -33,7 +33,6 @@ describe('CulturalPlacesService', () => {
     image: 'https://example.com/museo.jpg',
     rating: 4.5,
     isActive: true,
-    color: '#FF6B6B', // Color fijo para los tests
   };
 
   const mockRepository = {
@@ -128,11 +127,7 @@ describe('CulturalPlacesService', () => {
 
       const result = await service.findAll();
 
-      expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject({
-        ...mockCulturalPlace,
-        color: expect.any(String)
-      });
+      expect(result).toEqual([mockCulturalPlace]);
       expect(repository.findAll).toHaveBeenCalled();
     });
   });
@@ -143,10 +138,7 @@ describe('CulturalPlacesService', () => {
 
       const result = await service.findOne('507f1f77bcf86cd799439011');
 
-      expect(result).toMatchObject({
-        ...mockCulturalPlace,
-        color: expect.any(String)
-      });
+      expect(result).toEqual(mockCulturalPlace);
       expect(repository.findById).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
     });
 
@@ -163,11 +155,7 @@ describe('CulturalPlacesService', () => {
 
       const result = await service.findByCategory('Museo');
 
-      expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject({
-        ...mockCulturalPlace,
-        color: expect.any(String)
-      });
+      expect(result).toEqual([mockCulturalPlace]);
       expect(repository.findByCategory).toHaveBeenCalledWith('Museo');
     });
   });
@@ -178,11 +166,7 @@ describe('CulturalPlacesService', () => {
 
       const result = await service.findTopRated(5);
 
-      expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject({
-        ...mockCulturalPlace,
-        color: expect.any(String)
-      });
+      expect(result).toEqual([mockCulturalPlace]);
       expect(repository.findTopRated).toHaveBeenCalledWith(5);
     });
   });
@@ -200,10 +184,7 @@ describe('CulturalPlacesService', () => {
 
       const result = await service.update('507f1f77bcf86cd799439011', updateDto);
 
-      expect(result).toMatchObject({
-        ...updatedPlace,
-        color: expect.any(String)
-      });
+      expect(result).toEqual(updatedPlace);
       expect(repository.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
     });
 
