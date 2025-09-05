@@ -25,8 +25,8 @@ async function bootstrap() {
     .addServer(process.env.NODE_ENV === 'production' ? 'https://your-app-name.onrender.com' : 'http://localhost:3000')
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document);
 
   const port = process.env.PORT || 3000;
   await app.listen(port);

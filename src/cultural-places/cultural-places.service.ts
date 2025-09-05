@@ -37,7 +37,8 @@ export class CulturalPlacesService {
   }
 
   async findAll(query: CulturalPlaceQueryDto = {}): Promise<CulturalPlace[]> {
-    return await this.culturalPlaceRepository.findAll(query);
+    const places = await this.culturalPlaceRepository.findAll(query);
+    return places.map(place => this.addRandomColor(place));
   }
 
   async findOne(id: string): Promise<CulturalPlace> {
@@ -47,7 +48,7 @@ export class CulturalPlacesService {
       throw new NotFoundException('Cultural place not found');
     }
 
-    return place;
+    return this.addRandomColor(place);
   }
 
   async update(id: string, updateCulturalPlaceDto: UpdateCulturalPlaceDto): Promise<CulturalPlace> {
@@ -76,7 +77,7 @@ export class CulturalPlacesService {
         throw new NotFoundException('Cultural place not found');
       }
 
-      return updatedPlace;
+      return this.addRandomColor(updatedPlace);
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof ConflictException || error instanceof BadRequestException) {
         throw error;
@@ -96,7 +97,7 @@ export class CulturalPlacesService {
       throw new NotFoundException('Error updating place status');
     }
 
-    return updatedPlace;
+    return this.addRandomColor(updatedPlace);
   }
 
   async remove(id: string): Promise<void> {
@@ -110,15 +111,18 @@ export class CulturalPlacesService {
   }
 
   async findByCategory(category: string): Promise<CulturalPlace[]> {
-    return await this.culturalPlaceRepository.findByCategory(category);
+    const places = await this.culturalPlaceRepository.findByCategory(category);
+    return places.map(place => this.addRandomColor(place));
   }
 
   async findOpenPlaces(dayOfWeek: string): Promise<CulturalPlace[]> {
-    return await this.culturalPlaceRepository.findOpenPlaces(dayOfWeek);
+    const places = await this.culturalPlaceRepository.findOpenPlaces(dayOfWeek);
+    return places.map(place => this.addRandomColor(place));
   }
 
   async findTopRated(limit: number = 10): Promise<CulturalPlace[]> {
-    return await this.culturalPlaceRepository.findTopRated(limit);
+    const places = await this.culturalPlaceRepository.findTopRated(limit);
+    return places.map(place => this.addRandomColor(place));
   }
 
   private validateCoordinates(coordinates: { lat: number; lng: number }): void {
@@ -152,5 +156,21 @@ export class CulturalPlacesService {
         }
       }
     }
+  }
+
+  private addRandomColor(place: CulturalPlace): CulturalPlace {
+    const colors = [
+      '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+      '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
+      '#F8C471', '#82E0AA', '#F1948A', '#85C1E9', '#D7BDE2',
+      '#A9DFBF', '#F9E79F', '#D5A6BD', '#A3E4D7', '#FADBD8'
+    ];
+    
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    
+    return {
+      ...place,
+      color: randomColor
+    } as CulturalPlace;
   }
 }
