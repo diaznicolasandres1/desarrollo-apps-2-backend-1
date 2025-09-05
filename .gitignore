@@ -108,3 +108,4 @@ docker-volumes/
 
 # Local development files
 *.local
+.vercel
