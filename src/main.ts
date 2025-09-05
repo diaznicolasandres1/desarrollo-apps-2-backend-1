@@ -1,15 +1,13 @@
 import { NestFactory } from '@nestjs/core';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS for production
+  // Enable CORS for all origins
   app.enableCors({
-    origin: process.env.NODE_ENV === 'production' 
-      ? ['https://your-frontend-domain.com'] 
-      : true,
+    origin: true,
     credentials: true,
   });
 
@@ -22,7 +20,11 @@ async function bootstrap() {
     .setVersion('1.0')
     .addTag('cultural-places', 'Endpoints para gestionar lugares culturales')
     .addTag('users', 'Endpoints para gestionar usuarios')
-    .addServer(process.env.NODE_ENV === 'production' ? 'https://your-app-name.onrender.com' : 'http://localhost:3000')
+    .addServer(
+      process.env.NODE_ENV === 'production'
+        ? 'https://your-app-name.onrender.com'
+        : 'http://localhost:3000',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -30,7 +32,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  
+
   console.log(`🚀 Application is running on: http://localhost:${port}`);
   console.log(`📚 Swagger documentation: http://localhost:${port}/docs`);
 }
