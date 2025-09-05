@@ -27,10 +27,10 @@ export class CulturalPlacesService {
 
       this.validateSchedules(createCulturalPlaceDto.schedules);
 
-      // Generar color aleatorio para el lugar cultural
+      // Generar color aleatorio solo si no se proporciona uno
       const culturalPlaceWithColor = {
         ...createCulturalPlaceDto,
-        color: this.generateRandomColor(),
+        color: createCulturalPlaceDto.color || this.generateRandomColor(),
       };
 
       return await this.culturalPlaceRepository.create(culturalPlaceWithColor);

@@ -130,4 +130,9 @@ export class CreateCulturalPlaceDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiProperty({ example: '#FF6B6B', description: 'Color assigned to the place (auto-generated if not provided)', required: false })
+  @IsOptional()
+  @IsString()
+  color?: string;
 }
