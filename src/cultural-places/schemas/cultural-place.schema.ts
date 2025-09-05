@@ -76,6 +76,9 @@ export class CulturalPlace {
 
   @Prop({ default: true })
   isActive: boolean;
+
+  @Prop({ required: true })
+  color: string;
 }
 
 export const CulturalPlaceSchema = SchemaFactory.createForClass(CulturalPlace);

@@ -33,6 +33,7 @@ describe('CulturalPlacesService', () => {
     image: 'https://example.com/museo.jpg',
     rating: 4.5,
     isActive: true,
+    color: '#FF6B6B',
   };
 
   const mockRepository = {
@@ -84,7 +85,13 @@ describe('CulturalPlacesService', () => {
 
       expect(result).toEqual(mockCulturalPlace);
       expect(repository.findByName).toHaveBeenCalledWith(createDto.name);
-      expect(repository.create).toHaveBeenCalledWith(createDto);
+      
+      // Verificar que se llame con el DTO original más el color generado automáticamente
+      const createCall = mockRepository.create.mock.calls[0][0];
+      expect(createCall).toMatchObject(createDto);
+      expect(createCall.color).toBeDefined();
+      expect(typeof createCall.color).toBe('string');
+      expect(createCall.color).toMatch(/^#[0-9A-F]{6}$/i); // Verificar formato hexadecimal
     });
 
     it('should throw ConflictException if name already exists', async () => {
