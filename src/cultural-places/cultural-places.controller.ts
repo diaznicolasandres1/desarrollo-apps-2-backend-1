@@ -29,7 +29,13 @@ export class CulturalPlacesController {
   @ApiResponse({ status: 400, description: 'Bad request - validation error' })
   @ApiResponse({ status: 409, description: 'Conflict - place with same name already exists' })
   async create(@Body() createCulturalPlaceDto: CreateCulturalPlaceDto) {
-    return this.culturalPlacesService.create(createCulturalPlaceDto);
+    try {
+      console.log('Controller received data:', JSON.stringify(createCulturalPlaceDto, null, 2));
+      return await this.culturalPlacesService.create(createCulturalPlaceDto);
+    } catch (error) {
+      console.error('Controller error:', error);
+      throw error;
+    }
   }
 
   @Get()

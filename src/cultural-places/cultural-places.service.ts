@@ -15,6 +15,8 @@ export class CulturalPlacesService {
 
   async create(createCulturalPlaceDto: CreateCulturalPlaceDto): Promise<CulturalPlace> {
     try {
+      console.log('Creating cultural place with data:', JSON.stringify(createCulturalPlaceDto, null, 2));
+      
       const existingPlace = await this.culturalPlaceRepository.findByName(createCulturalPlaceDto.name);
 
       if (existingPlace) {
@@ -33,12 +35,18 @@ export class CulturalPlacesService {
         color: createCulturalPlaceDto.color || this.generateRandomColor(),
       };
 
+      console.log('Processed cultural place data:', JSON.stringify(culturalPlaceWithColor, null, 2));
+
       return await this.culturalPlaceRepository.create(culturalPlaceWithColor);
     } catch (error) {
+      console.error('Error creating cultural place:', error);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      
       if (error instanceof ConflictException || error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException('Error creating cultural place');
+      throw new BadRequestException(`Error creating cultural place: ${error.message}`);
     }
   }
 
