@@ -166,17 +166,39 @@ export class TicketsService {
   async getTicketStats(eventId: string): Promise<any> {
     const tickets = await this.repository.findByEvent(eventId);
     
+    // Calculate revenue
+    const totalRevenue = tickets.reduce((sum, ticket) => sum + ticket.price, 0);
+    const activeRevenue = tickets
+      .filter(t => t.status === 'active')
+      .reduce((sum, ticket) => sum + ticket.price, 0);
+    
+    // Group by ticket type with detailed stats
+    const ticketTypeStats = {};
+    const ticketTypes = ['general', 'vip', 'jubilados', 'niños'];
+    
+    ticketTypes.forEach(type => {
+      const typeTickets = tickets.filter(t => t.ticketType === type);
+      ticketTypeStats[type] = {
+        sold: typeTickets.length,
+        revenue: typeTickets.reduce((sum, ticket) => sum + ticket.price, 0),
+        active: typeTickets.filter(t => t.status === 'active').length,
+        used: typeTickets.filter(t => t.status === 'used').length,
+        cancelled: typeTickets.filter(t => t.status === 'cancelled').length
+      };
+    });
+    
     const stats = {
-      total: tickets.length,
-      active: tickets.filter(t => t.status === 'active').length,
-      used: tickets.filter(t => t.status === 'used').length,
-      cancelled: tickets.filter(t => t.status === 'cancelled').length,
-      byType: {
-        general: tickets.filter(t => t.ticketType === 'general').length,
-        vip: tickets.filter(t => t.ticketType === 'vip').length,
-        jubilados: tickets.filter(t => t.ticketType === 'jubilados').length,
-        niños: tickets.filter(t => t.ticketType === 'niños').length,
-      }
+      eventId,
+      totalTicketsSold: tickets.length,
+      totalRevenue,
+      activeRevenue,
+      ticketTypeStats,
+      statusBreakdown: {
+        active: tickets.filter(t => t.status === 'active').length,
+        used: tickets.filter(t => t.status === 'used').length,
+        cancelled: tickets.filter(t => t.status === 'cancelled').length,
+      },
+      averageTicketPrice: tickets.length > 0 ? totalRevenue / tickets.length : 0
     };
 
     return stats;

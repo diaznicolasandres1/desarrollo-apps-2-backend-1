@@ -49,6 +49,50 @@ export class CulturalPlacesController {
     return this.culturalPlacesService.findAll(query);
   }
 
+  @Get('top-rated')
+  @ApiOperation({ summary: 'Get top rated cultural places' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Number of places to return' })
+  @ApiResponse({ status: 200, description: 'Top rated cultural places retrieved successfully' })
+  async findTopRated(@Query('limit') limit?: string) {
+    const limitNumber = limit ? parseInt(limit, 10) : 10;
+    return this.culturalPlacesService.findTopRated(limitNumber);
+  }
+
+  @Get('nearby')
+  @ApiOperation({ summary: 'Find cultural places nearby' })
+  @ApiQuery({ name: 'lat', required: true, description: 'Latitude' })
+  @ApiQuery({ name: 'lng', required: true, description: 'Longitude' })
+  @ApiQuery({ name: 'radius', required: true, description: 'Search radius in kilometers' })
+  @ApiResponse({ status: 200, description: 'Nearby cultural places retrieved successfully' })
+  async findNearby(
+    @Query('lat') lat: string,
+    @Query('lng') lng: string,
+    @Query('radius') radius: string,
+  ) {
+    const query: CulturalPlaceQueryDto = {
+      lat: parseFloat(lat),
+      lng: parseFloat(lng),
+      radius: parseFloat(radius),
+    };
+    return this.culturalPlacesService.findAll(query);
+  }
+
+  @Get('category/:category')
+  @ApiOperation({ summary: 'Get cultural places by category' })
+  @ApiParam({ name: 'category', description: 'Cultural place category' })
+  @ApiResponse({ status: 200, description: 'Cultural places by category retrieved successfully' })
+  async findByCategory(@Param('category') category: string) {
+    return this.culturalPlacesService.findByCategory(category);
+  }
+
+  @Get('open/:day')
+  @ApiOperation({ summary: 'Get cultural places open on specific day' })
+  @ApiParam({ name: 'day', description: 'Day of the week' })
+  @ApiResponse({ status: 200, description: 'Cultural places open on specific day retrieved successfully' })
+  async findOpenPlaces(@Param('day') day: string) {
+    return this.culturalPlacesService.findOpenPlaces(day);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a cultural place by ID' })
   @ApiParam({ name: 'id', description: 'Cultural place ID' })
@@ -80,36 +124,5 @@ export class CulturalPlacesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string) {
     await this.culturalPlacesService.remove(id);
-  }
-
-  @Get('category/:category')
-  async findByCategory(@Param('category') category: string) {
-    return this.culturalPlacesService.findByCategory(category);
-  }
-
-  @Get('open/:day')
-  async findOpenPlaces(@Param('day') day: string) {
-    return this.culturalPlacesService.findOpenPlaces(day);
-  }
-
-  @Get('top-rated')
-  async findTopRated(@Query('limit') limit?: string) {
-    const limitNumber = limit ? parseInt(limit, 10) : 10;
-    return this.culturalPlacesService.findTopRated(limitNumber);
-  }
-
-  @Get('nearby')
-  async findNearby(
-    @Query('lat') lat: string,
-    @Query('lng') lng: string,
-    @Query('radius') radius: string,
-  ) {
-    const query: CulturalPlaceQueryDto = {
-      lat: parseFloat(lat),
-      lng: parseFloat(lng),
-      radius: parseFloat(radius),
-    };
-    
-    return this.culturalPlacesService.findAll(query);
   }
 }

@@ -43,8 +43,15 @@ export class CulturalPlace {
     type: {
       address: String,
       coordinates: {
-        lat: Number,
-        lng: Number
+        type: {
+          type: String,
+          enum: ['Point'],
+          default: 'Point'
+        },
+        coordinates: {
+          type: [Number],
+          required: true
+        }
       },
       phone: String,
       website: String,
@@ -55,8 +62,8 @@ export class CulturalPlace {
   contact: {
     address: string;
     coordinates: {
-      lat: number;
-      lng: number;
+      type: 'Point';
+      coordinates: [number, number]; // [lng, lat]
     };
     phone: string;
     website: string;
