@@ -25,7 +25,10 @@ describe('CulturalPlacesService', () => {
     },
     contact: {
       address: 'Av. Principal 123',
-      coordinates: { lat: -34.6037, lng: -58.3816 },
+      coordinates: { 
+        type: 'Point',
+        coordinates: [-58.3816, -34.6037] // [lng, lat]
+      },
       phone: '+54 11 1234-5678',
       website: 'https://museoarte.com',
       email: 'info@museoarte.com',
@@ -117,7 +120,10 @@ describe('CulturalPlacesService', () => {
         schedules: mockCulturalPlace.schedules,
         contact: {
           ...mockCulturalPlace.contact,
-          coordinates: { lat: 100, lng: 0 }, // Invalid latitude
+          coordinates: { 
+            type: 'Point',
+            coordinates: [0, 100] // Invalid latitude [lng, lat]
+          },
         },
         image: 'https://example.com/image.jpg',
       };
@@ -206,7 +212,10 @@ describe('CulturalPlacesService', () => {
     it('should validate coordinates if provided', async () => {
       const updateDto = {
         contact: {
-          coordinates: { lat: 100, lng: 0 }, // Invalid latitude
+          coordinates: { 
+            type: 'Point',
+            coordinates: [0, 100] // Invalid latitude [lng, lat]
+          },
         },
       };
 
