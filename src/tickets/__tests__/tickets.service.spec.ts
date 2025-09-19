@@ -6,6 +6,8 @@ import { TICKET_REPOSITORY } from '../interfaces/ticket.repository.token';
 import { PurchaseTicketDto } from '../dto/purchase-ticket.dto';
 import { UpdateTicketDto } from '../dto/update-ticket.dto';
 import { EventsService } from '../../events/events.service';
+import { UserService } from '../../users/user/user.service';
+import { EmailService } from '../../email/email.service';
 
 describe('TicketsService', () => {
   let service: TicketsService;
@@ -55,6 +57,18 @@ describe('TicketsService', () => {
             checkTicketAvailability: jest.fn(),
             getTicketAvailability: jest.fn(),
             updateTicketCount: jest.fn(),
+          },
+        },
+        {
+          provide: UserService,
+          useValue: {
+            findOne: jest.fn(),
+          },
+        },
+        {
+          provide: EmailService,
+          useValue: {
+            sendTicketConfirmationEmail: jest.fn(),
           },
         },
       ],
