@@ -15,6 +15,8 @@ export class CulturalPlacesService {
 
   async create(createCulturalPlaceDto: CreateCulturalPlaceDto): Promise<CulturalPlace> {
     try {
+      console.log('Creating cultural place with data:', JSON.stringify(createCulturalPlaceDto, null, 2));
+      
       const existingPlace = await this.culturalPlaceRepository.findByName(createCulturalPlaceDto.name);
 
       if (existingPlace) {
@@ -27,18 +29,31 @@ export class CulturalPlacesService {
 
       this.validateSchedules(createCulturalPlaceDto.schedules);
 
-      // Generar color aleatorio solo si no se proporciona uno
-      const culturalPlaceWithColor = {
+      // Transformar coordenadas al formato GeoJSON
+      const transformedData = {
         ...createCulturalPlaceDto,
         color: createCulturalPlaceDto.color || this.generateRandomColor(),
+        contact: {
+          ...createCulturalPlaceDto.contact,
+          coordinates: {
+            type: 'Point' as const,
+            coordinates: [createCulturalPlaceDto.contact.coordinates.coordinates[0], createCulturalPlaceDto.contact.coordinates.coordinates[1]] as [number, number]
+          }
+        }
       };
 
-      return await this.culturalPlaceRepository.create(culturalPlaceWithColor);
+      console.log('Processed cultural place data:', JSON.stringify(transformedData, null, 2));
+
+      return await this.culturalPlaceRepository.create(transformedData);
     } catch (error) {
+      console.error('Error creating cultural place:', error);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      
       if (error instanceof ConflictException || error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException('Error creating cultural place');
+      throw new BadRequestException(`Error creating cultural place: ${error.message}`);
     }
   }
 
@@ -71,6 +86,11 @@ export class CulturalPlacesService {
 
       if (updateCulturalPlaceDto.contact?.coordinates) {
         this.validateCoordinates(updateCulturalPlaceDto.contact.coordinates);
+        // Transformar coordenadas al formato GeoJSON
+        updateCulturalPlaceDto.contact.coordinates = {
+          type: 'Point' as const,
+          coordinates: [updateCulturalPlaceDto.contact.coordinates.coordinates[0], updateCulturalPlaceDto.contact.coordinates.coordinates[1]] as [number, number]
+        };
       }
 
       if (updateCulturalPlaceDto.schedules) {
@@ -131,12 +151,18 @@ export class CulturalPlacesService {
     return places.map(place => this.transformCoordinatesForResponse((place as any).toObject ? (place as any).toObject() : place));
   }
 
-  private validateCoordinates(coordinates: { lat: number; lng: number }): void {
-    if (coordinates.lat < -90 || coordinates.lat > 90) {
+  private validateCoordinates(coordinates: { type: string; coordinates: [number, number] }): void {
+    if (!coordinates.coordinates || coordinates.coordinates.length !== 2) {
+      throw new BadRequestException('Coordinates must be an array with exactly 2 elements [longitude, latitude]');
+    }
+    
+    const [lng, lat] = coordinates.coordinates;
+    
+    if (lat < -90 || lat > 90) {
       throw new BadRequestException('Latitude must be between -90 and 90');
     }
     
-    if (coordinates.lng < -180 || coordinates.lng > 180) {
+    if (lng < -180 || lng > 180) {
       throw new BadRequestException('Longitude must be between -180 and 180');
     }
   }

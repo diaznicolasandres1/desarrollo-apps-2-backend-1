@@ -71,7 +71,7 @@ export class MongoDBCulturalPlaceRepository implements ICulturalPlaceRepository 
 
   async update(id: string, data: UpdateCulturalPlaceDto): Promise<CulturalPlace | null> {
     return await this.culturalPlaceModel
-      .findByIdAndUpdate(id, data, { new: true })
+      .findByIdAndUpdate(id, { $set: data }, { new: true })
       .exec();
   }
 

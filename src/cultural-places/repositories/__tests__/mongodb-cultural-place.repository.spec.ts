@@ -141,7 +141,7 @@ describe('MongoDBCulturalPlaceRepository', () => {
 
       const result = await repository.update('507f1f77bcf86cd799439011', updateDto);
 
-      expect(model.findByIdAndUpdate).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto, { new: true });
+      expect(model.findByIdAndUpdate).toHaveBeenCalledWith('507f1f77bcf86cd799439011', { $set: updateDto }, { new: true });
       expect(result).toEqual(mockCulturalPlace);
     });
   });

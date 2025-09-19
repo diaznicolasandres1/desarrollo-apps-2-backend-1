@@ -17,13 +17,17 @@ export class ScheduleDto {
 }
 
 export class CoordinatesDto {
-  @ApiProperty({ example: -34.58837750, description: 'Latitude' })
-  @IsNumber()
-  lat: number;
+  @ApiProperty({ example: 'Point', description: 'GeoJSON type' })
+  @IsString()
+  type: string;
 
-  @ApiProperty({ example: -58.46471750, description: 'Longitude' })
-  @IsNumber()
-  lng: number;
+  @ApiProperty({ 
+    example: [-58.46471750, -34.58837750], 
+    description: 'Coordinates array [longitude, latitude]' 
+  })
+  @IsArray()
+  @IsNumber({}, { each: true })
+  coordinates: [number, number];
 }
 
 export class ContactDto {
@@ -95,7 +99,7 @@ export class CreateCulturalPlaceDto {
   @IsString()
   description: string;
 
-  @ApiProperty({ example: 'Centro Cultural', enum: ['Museo', 'Cine', 'Centro Cultural', 'Teatro', 'Galería', 'Biblioteca', 'Auditorio'], description: 'Category of the cultural place' })
+  @ApiProperty({ example: 'Centro Cultural', description: 'Category of the cultural place' })
   @IsString()
   category: string;
 

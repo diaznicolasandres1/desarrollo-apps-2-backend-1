@@ -404,16 +404,46 @@ describe('TicketsService', () => {
       const result = await service.getTicketStats('507f1f77bcf86cd799439012');
 
       expect(result).toEqual({
-        total: 3,
-        active: 1,
-        used: 1,
-        cancelled: 1,
-        byType: {
-          general: 2,
-          vip: 1,
-          jubilados: 0,
-          niños: 0,
+        eventId: '507f1f77bcf86cd799439012',
+        totalTicketsSold: 3,
+        totalRevenue: 3000,
+        activeRevenue: 1000,
+        ticketTypeStats: {
+          general: {
+            sold: 2,
+            revenue: 2000,
+            active: 1,
+            used: 0,
+            cancelled: 1,
+          },
+          vip: {
+            sold: 1,
+            revenue: 1000,
+            active: 0,
+            used: 1,
+            cancelled: 0,
+          },
+          jubilados: {
+            sold: 0,
+            revenue: 0,
+            active: 0,
+            used: 0,
+            cancelled: 0,
+          },
+          niños: {
+            sold: 0,
+            revenue: 0,
+            active: 0,
+            used: 0,
+            cancelled: 0,
+          },
         },
+        statusBreakdown: {
+          active: 1,
+          used: 1,
+          cancelled: 1,
+        },
+        averageTicketPrice: 1000,
       });
       expect(repository.findByEvent).toHaveBeenCalledWith('507f1f77bcf86cd799439012');
     });

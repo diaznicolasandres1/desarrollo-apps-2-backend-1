@@ -29,7 +29,13 @@ export class CulturalPlacesController {
   @ApiResponse({ status: 400, description: 'Bad request - validation error' })
   @ApiResponse({ status: 409, description: 'Conflict - place with same name already exists' })
   async create(@Body() createCulturalPlaceDto: CreateCulturalPlaceDto) {
-    return this.culturalPlacesService.create(createCulturalPlaceDto);
+    try {
+      console.log('Controller received data:', JSON.stringify(createCulturalPlaceDto, null, 2));
+      return await this.culturalPlacesService.create(createCulturalPlaceDto);
+    } catch (error) {
+      console.error('Controller error:', error);
+      throw error;
+    }
   }
 
   @Get()
@@ -63,6 +69,30 @@ export class CulturalPlacesController {
     return this.culturalPlacesService.findAll(query);
   }
 
+  @Get('category/:category')
+  @ApiOperation({ summary: 'Get cultural places by category' })
+  @ApiParam({ name: 'category', description: 'Cultural place category' })
+  @ApiResponse({ status: 200, description: 'Cultural places by category retrieved successfully' })
+  async findByCategory(@Param('category') category: string) {
+    return this.culturalPlacesService.findByCategory(category);
+  }
+
+  @Get('open/:day')
+  @ApiOperation({ summary: 'Get cultural places open on specific day' })
+  @ApiParam({ name: 'day', description: 'Day of the week' })
+  @ApiResponse({ status: 200, description: 'Cultural places open on specific day retrieved successfully' })
+  async findOpenPlaces(@Param('day') day: string) {
+    return this.culturalPlacesService.findOpenPlaces(day);
+  }
+
+  @Get('top-rated')
+  @ApiOperation({ summary: 'Get top rated cultural places' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Number of places to return' })
+  @ApiResponse({ status: 200, description: 'Top rated cultural places retrieved successfully' })
+  async findTopRated(@Query('limit') limit?: string) {
+    const limitNumber = limit ? parseInt(limit, 10) : 10;
+    return this.culturalPlacesService.findTopRated(limitNumber);
+  }
   @Get(':id')
   @ApiOperation({ summary: 'Get a cultural place by ID' })
   @ApiParam({ name: 'id', description: 'Cultural place ID' })
@@ -95,21 +125,4 @@ export class CulturalPlacesController {
   async remove(@Param('id') id: string) {
     await this.culturalPlacesService.remove(id);
   }
-
-  @Get('category/:category')
-  async findByCategory(@Param('category') category: string) {
-    return this.culturalPlacesService.findByCategory(category);
-  }
-
-  @Get('open/:day')
-  async findOpenPlaces(@Param('day') day: string) {
-    return this.culturalPlacesService.findOpenPlaces(day);
-  }
-
-  @Get('top-rated')
-  async findTopRated(@Query('limit') limit?: string) {
-    const limitNumber = limit ? parseInt(limit, 10) : 10;
-    return this.culturalPlacesService.findTopRated(limitNumber);
-  }
-
 }

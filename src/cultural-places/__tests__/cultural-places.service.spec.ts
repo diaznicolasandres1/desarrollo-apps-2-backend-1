@@ -25,7 +25,10 @@ describe('CulturalPlacesService', () => {
     },
     contact: {
       address: 'Av. Principal 123',
-      coordinates: { lat: -34.6037, lng: -58.3816 },
+      coordinates: { 
+        type: 'Point',
+        coordinates: [-58.3816, -34.6037] // [lng, lat]
+      },
       phone: '+54 11 1234-5678',
       website: 'https://museoarte.com',
       email: 'info@museoarte.com',
@@ -117,7 +120,10 @@ describe('CulturalPlacesService', () => {
         schedules: mockCulturalPlace.schedules,
         contact: {
           ...mockCulturalPlace.contact,
-          coordinates: { lat: 100, lng: 0 }, // Invalid latitude
+          coordinates: { 
+            type: 'Point',
+            coordinates: [0, 100] // Invalid latitude [lng, lat]
+          },
         },
         image: 'https://example.com/image.jpg',
       };
@@ -206,7 +212,10 @@ describe('CulturalPlacesService', () => {
     it('should validate coordinates if provided', async () => {
       const updateDto = {
         contact: {
-          coordinates: { lat: 100, lng: 0 }, // Invalid latitude
+          coordinates: { 
+            type: 'Point',
+            coordinates: [0, 100] // Invalid latitude [lng, lat]
+          },
         },
       };
 
@@ -244,6 +253,30 @@ describe('CulturalPlacesService', () => {
 
       expect(result.isActive).toBe(false);
       expect(repository.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', { isActive: false });
+    });
+
+    it('should accept custom categories', async () => {
+      const customCategoryDto: CreateCulturalPlaceDto = {
+        name: 'Centro de Innovación',
+        description: 'Un centro de innovación tecnológica',
+        category: 'Centro de Innovación', // Categoría personalizada
+        schedules: mockCulturalPlace.schedules,
+        contact: mockCulturalPlace.contact,
+        image: 'https://example.com/image.jpg',
+      };
+
+      const createdPlace = { ...mockCulturalPlace, category: 'Centro de Innovación' };
+      mockRepository.findByName.mockResolvedValue(null);
+      mockRepository.create.mockResolvedValue(createdPlace);
+
+      const result = await service.create(customCategoryDto);
+
+      expect(result.category).toBe('Centro de Innovación');
+      expect(repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'Centro de Innovación'
+        })
+      );
     });
   });
 });

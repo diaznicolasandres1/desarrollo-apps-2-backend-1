@@ -22,13 +22,26 @@ async function bootstrap() {
     .addTag('users', 'Endpoints para gestionar usuarios')
     .addServer(
       process.env.NODE_ENV === 'production'
-        ? 'https://your-app-name.onrender.com'
+        ? 'https://desarrollo-apps2-back-end.vercel.app'
         : 'http://localhost:3000',
     )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  SwaggerModule.setup('docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+    customSiteTitle: 'Cultural Places API',
+    customfavIcon: '/favicon.ico',
+    customJs: [
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-bundle.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-standalone-preset.js',
+    ],
+    customCssUrl: [
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui.css',
+    ],
+  });
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
