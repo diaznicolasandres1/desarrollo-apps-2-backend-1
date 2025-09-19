@@ -361,4 +361,4 @@ This project is licensed under the MIT License.
 - **Email:** your-email@example.com
 - **Issues:** [GitHub Issues](https://github.com/your-username/repo-name/issues)
 - **Documentation:** [API Docs](https://cultural-places-api.onrender.com/docs)
-3
+4
