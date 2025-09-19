@@ -43,6 +43,26 @@ export class CulturalPlacesController {
     return this.culturalPlacesService.findAll(query);
   }
 
+  @Get('nearby')
+  @ApiOperation({ summary: 'Find cultural places nearby a location' })
+  @ApiQuery({ name: 'lat', required: true, description: 'Latitude' })
+  @ApiQuery({ name: 'lng', required: true, description: 'Longitude' })
+  @ApiQuery({ name: 'radius', required: true, description: 'Radius in kilometers' })
+  @ApiResponse({ status: 200, description: 'Nearby cultural places found successfully' })
+  async findNearby(
+    @Query('lat') lat: string,
+    @Query('lng') lng: string,
+    @Query('radius') radius: string,
+  ) {
+    const query: CulturalPlaceQueryDto = {
+      lat: parseFloat(lat),
+      lng: parseFloat(lng),
+      radius: parseFloat(radius),
+    };
+    
+    return this.culturalPlacesService.findAll(query);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a cultural place by ID' })
   @ApiParam({ name: 'id', description: 'Cultural place ID' })
@@ -92,18 +112,4 @@ export class CulturalPlacesController {
     return this.culturalPlacesService.findTopRated(limitNumber);
   }
 
-  @Get('nearby')
-  async findNearby(
-    @Query('lat') lat: string,
-    @Query('lng') lng: string,
-    @Query('radius') radius: string,
-  ) {
-    const query: CulturalPlaceQueryDto = {
-      lat: parseFloat(lat),
-      lng: parseFloat(lng),
-      radius: parseFloat(radius),
-    };
-    
-    return this.culturalPlacesService.findAll(query);
-  }
 }

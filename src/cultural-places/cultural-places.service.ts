@@ -43,7 +43,8 @@ export class CulturalPlacesService {
   }
 
   async findAll(query: CulturalPlaceQueryDto = {}): Promise<CulturalPlace[]> {
-    return await this.culturalPlaceRepository.findAll(query);
+    const places = await this.culturalPlaceRepository.findAll(query);
+    return places.map(place => this.transformCoordinatesForResponse((place as any).toObject ? (place as any).toObject() : place));
   }
 
   async findOne(id: string): Promise<CulturalPlace> {
@@ -53,7 +54,7 @@ export class CulturalPlacesService {
       throw new NotFoundException('Cultural place not found');
     }
 
-    return place;
+    return this.transformCoordinatesForResponse((place as any).toObject ? (place as any).toObject() : place);
   }
 
   async update(id: string, updateCulturalPlaceDto: UpdateCulturalPlaceDto): Promise<CulturalPlace> {
@@ -82,7 +83,7 @@ export class CulturalPlacesService {
         throw new NotFoundException('Cultural place not found');
       }
 
-      return updatedPlace;
+      return this.transformCoordinatesForResponse((updatedPlace as any).toObject ? (updatedPlace as any).toObject() : updatedPlace);
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof ConflictException || error instanceof BadRequestException) {
         throw error;
@@ -102,7 +103,7 @@ export class CulturalPlacesService {
       throw new NotFoundException('Error updating place status');
     }
 
-    return updatedPlace;
+    return this.transformCoordinatesForResponse((updatedPlace as any).toObject ? (updatedPlace as any).toObject() : updatedPlace);
   }
 
   async remove(id: string): Promise<void> {
@@ -116,15 +117,18 @@ export class CulturalPlacesService {
   }
 
   async findByCategory(category: string): Promise<CulturalPlace[]> {
-    return await this.culturalPlaceRepository.findByCategory(category);
+    const places = await this.culturalPlaceRepository.findByCategory(category);
+    return places.map(place => this.transformCoordinatesForResponse((place as any).toObject ? (place as any).toObject() : place));
   }
 
   async findOpenPlaces(dayOfWeek: string): Promise<CulturalPlace[]> {
-    return await this.culturalPlaceRepository.findOpenPlaces(dayOfWeek);
+    const places = await this.culturalPlaceRepository.findOpenPlaces(dayOfWeek);
+    return places.map(place => this.transformCoordinatesForResponse((place as any).toObject ? (place as any).toObject() : place));
   }
 
   async findTopRated(limit: number = 10): Promise<CulturalPlace[]> {
-    return await this.culturalPlaceRepository.findTopRated(limit);
+    const places = await this.culturalPlaceRepository.findTopRated(limit);
+    return places.map(place => this.transformCoordinatesForResponse((place as any).toObject ? (place as any).toObject() : place));
   }
 
   private validateCoordinates(coordinates: { lat: number; lng: number }): void {
@@ -182,5 +186,35 @@ export class CulturalPlacesService {
 
     const randomIndex = Math.floor(Math.random() * colors.length);
     return colors[randomIndex];
+  }
+
+  /**
+   * Transforma las coordenadas GeoJSON a formato {lat, lng} para mantener compatibilidad con el frontend
+   */
+  private transformCoordinatesForResponse(place: any): any {
+    if (place && place.contact && place.contact.coordinates) {
+      const coordinates = place.contact.coordinates;
+      
+      // Si ya está en formato {lat, lng}, devolverlo tal como está
+      if (coordinates.lat !== undefined && coordinates.lng !== undefined) {
+        return place;
+      }
+      
+      // Si está en formato GeoJSON, convertir a {lat, lng}
+      if (coordinates.type === 'Point' && Array.isArray(coordinates.coordinates)) {
+        return {
+          ...place,
+          contact: {
+            ...place.contact,
+            coordinates: {
+              lat: coordinates.coordinates[1], // lat es el segundo elemento
+              lng: coordinates.coordinates[0]  // lng es el primer elemento
+            }
+          }
+        };
+      }
+    }
+    
+    return place;
   }
 }
