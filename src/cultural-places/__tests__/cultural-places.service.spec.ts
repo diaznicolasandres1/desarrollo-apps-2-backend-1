@@ -26,8 +26,8 @@ describe('CulturalPlacesService', () => {
     contact: {
       address: 'Av. Principal 123',
       coordinates: { 
-        type: 'Point',
-        coordinates: [-58.3816, -34.6037] // [lng, lat]
+        lat: -34.6037,
+        lng: -58.3816
       },
       phone: '+54 11 1234-5678',
       website: 'https://museoarte.com',
@@ -89,9 +89,18 @@ describe('CulturalPlacesService', () => {
       expect(result).toEqual(mockCulturalPlace);
       expect(repository.findByName).toHaveBeenCalledWith(createDto.name);
       
-      // Verificar que se llame con el DTO original más el color generado automáticamente
+      // Verificar que se llame con datos transformados (coordenadas a GeoJSON) más el color generado automáticamente
       const createCall = mockRepository.create.mock.calls[0][0];
-      expect(createCall).toMatchObject(createDto);
+      expect(createCall).toMatchObject({
+        ...createDto,
+        contact: {
+          ...createDto.contact,
+          coordinates: {
+            type: 'Point',
+            coordinates: [createDto.contact.coordinates.lng, createDto.contact.coordinates.lat]
+          }
+        }
+      });
       expect(createCall.color).toBeDefined();
       expect(typeof createCall.color).toBe('string');
       expect(createCall.color).toMatch(/^#[0-9A-F]{6}$/i); // Verificar formato hexadecimal

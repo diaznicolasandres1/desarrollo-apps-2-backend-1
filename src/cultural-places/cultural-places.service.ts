@@ -29,7 +29,7 @@ export class CulturalPlacesService {
 
       this.validateSchedules(createCulturalPlaceDto.schedules);
 
-      // Transformar coordenadas al formato GeoJSON
+      // Transformar coordenadas de {lat, lng} a GeoJSON para almacenamiento
       const transformedData = {
         ...createCulturalPlaceDto,
         color: createCulturalPlaceDto.color || this.generateRandomColor(),
@@ -37,14 +37,14 @@ export class CulturalPlacesService {
           ...createCulturalPlaceDto.contact,
           coordinates: {
             type: 'Point' as const,
-            coordinates: [createCulturalPlaceDto.contact.coordinates.coordinates[0], createCulturalPlaceDto.contact.coordinates.coordinates[1]] as [number, number]
+            coordinates: [createCulturalPlaceDto.contact.coordinates.lng, createCulturalPlaceDto.contact.coordinates.lat] as [number, number]
           }
         }
       };
 
       console.log('Processed cultural place data:', JSON.stringify(transformedData, null, 2));
 
-      return await this.culturalPlaceRepository.create(transformedData);
+      return await this.culturalPlaceRepository.create(transformedData as any);
     } catch (error) {
       console.error('Error creating cultural place:', error);
       console.error('Error message:', error.message);
@@ -84,12 +84,18 @@ export class CulturalPlacesService {
         }
       }
 
-      if (updateCulturalPlaceDto.contact?.coordinates) {
-        this.validateCoordinates(updateCulturalPlaceDto.contact.coordinates);
-        // Transformar coordenadas al formato GeoJSON
-        updateCulturalPlaceDto.contact.coordinates = {
-          type: 'Point' as const,
-          coordinates: [updateCulturalPlaceDto.contact.coordinates.coordinates[0], updateCulturalPlaceDto.contact.coordinates.coordinates[1]] as [number, number]
+      // Crear una copia para transformar las coordenadas sin modificar el DTO original
+      const transformedUpdateDto = { ...updateCulturalPlaceDto };
+      
+      if (transformedUpdateDto.contact?.coordinates) {
+        this.validateCoordinates(transformedUpdateDto.contact.coordinates);
+        // Transformar coordenadas de {lat, lng} a GeoJSON para almacenamiento
+        transformedUpdateDto.contact = {
+          ...transformedUpdateDto.contact,
+          coordinates: {
+            type: 'Point' as const,
+            coordinates: [transformedUpdateDto.contact.coordinates.lng, transformedUpdateDto.contact.coordinates.lat] as [number, number]
+          } as any
         };
       }
 
@@ -97,7 +103,7 @@ export class CulturalPlacesService {
         this.validateSchedules(updateCulturalPlaceDto.schedules);
       }
 
-      const updatedPlace = await this.culturalPlaceRepository.update(id, updateCulturalPlaceDto);
+      const updatedPlace = await this.culturalPlaceRepository.update(id, transformedUpdateDto as any);
 
       if (!updatedPlace) {
         throw new NotFoundException('Cultural place not found');
@@ -151,18 +157,16 @@ export class CulturalPlacesService {
     return places.map(place => this.transformCoordinatesForResponse((place as any).toObject ? (place as any).toObject() : place));
   }
 
-  private validateCoordinates(coordinates: { type: string; coordinates: [number, number] }): void {
-    if (!coordinates.coordinates || coordinates.coordinates.length !== 2) {
-      throw new BadRequestException('Coordinates must be an array with exactly 2 elements [longitude, latitude]');
+  private validateCoordinates(coordinates: { lat: number; lng: number }): void {
+    if (typeof coordinates.lat !== 'number' || typeof coordinates.lng !== 'number') {
+      throw new BadRequestException('Coordinates must have lat and lng as numbers');
     }
     
-    const [lng, lat] = coordinates.coordinates;
-    
-    if (lat < -90 || lat > 90) {
+    if (coordinates.lat < -90 || coordinates.lat > 90) {
       throw new BadRequestException('Latitude must be between -90 and 90');
     }
     
-    if (lng < -180 || lng > 180) {
+    if (coordinates.lng < -180 || coordinates.lng > 180) {
       throw new BadRequestException('Longitude must be between -180 and 180');
     }
   }

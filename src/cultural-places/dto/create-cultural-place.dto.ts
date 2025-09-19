@@ -17,17 +17,13 @@ export class ScheduleDto {
 }
 
 export class CoordinatesDto {
-  @ApiProperty({ example: 'Point', description: 'GeoJSON type' })
-  @IsString()
-  type: string;
+ @ApiProperty({ example: -34.6037, description: 'Latitude' })
+  @IsNumber()
+  lat: number;
 
-  @ApiProperty({ 
-    example: [-58.46471750, -34.58837750], 
-    description: 'Coordinates array [longitude, latitude]' 
-  })
-  @IsArray()
-  @IsNumber({}, { each: true })
-  coordinates: [number, number];
+  @ApiProperty({ example: -58.3816, description: 'Longitude' })
+  @IsNumber()
+  lng: number;
 }
 
 export class ContactDto {
