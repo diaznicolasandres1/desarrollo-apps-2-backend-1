@@ -34,7 +34,8 @@ export class EventsService {
   }
 
   async findAll(query?: any): Promise<any[]> {
-    return this.repository.findAll(query);
+    const events = await this.repository.findAll(query);
+    return events.map(event => this.transformEventCoordinates(event));
   }
 
   async findOne(id: string): Promise<any> {
@@ -42,19 +43,22 @@ export class EventsService {
     if (!event) {
       throw new NotFoundException('Event not found');
     }
-    return event;
+    return this.transformEventCoordinates(event);
   }
 
   async findByCulturalPlace(culturalPlaceId: string): Promise<any[]> {
-    return this.repository.findByCulturalPlace(culturalPlaceId);
+    const events = await this.repository.findByCulturalPlace(culturalPlaceId);
+    return events.map(event => this.transformEventCoordinates(event));
   }
 
   async findByDateRange(startDate: Date, endDate: Date): Promise<any[]> {
-    return this.repository.findByDateRange(startDate, endDate);
+    const events = await this.repository.findByDateRange(startDate, endDate);
+    return events.map(event => this.transformEventCoordinates(event));
   }
 
   async findActiveEvents(): Promise<Event[]> {
-    return this.repository.findActiveEvents();
+    const events = await this.repository.findActiveEvents();
+    return events.map(event => this.transformEventCoordinates(event));
   }
 
   async update(id: string, updateEventDto: UpdateEventDto): Promise<Event> {
@@ -156,6 +160,39 @@ export class EventsService {
     if (!timeRegex.test(time)) {
       throw new BadRequestException('Invalid time format. Use HH:MM format');
     }
+  }
+
+  /**
+   * Transforma las coordenadas GeoJSON del lugar cultural a formato {lat, lng} para mantener compatibilidad con el frontend
+   */
+  private transformEventCoordinates(event: any): any {
+    if (event && event.culturalPlaceId && event.culturalPlaceId.contact && event.culturalPlaceId.contact.coordinates) {
+      const coordinates = event.culturalPlaceId.contact.coordinates;
+      
+      // Si ya está en formato {lat, lng}, devolverlo tal como está
+      if (coordinates.lat !== undefined && coordinates.lng !== undefined) {
+        return event;
+      }
+      
+      // Si está en formato GeoJSON, convertir a {lat, lng}
+      if (coordinates.type === 'Point' && Array.isArray(coordinates.coordinates)) {
+        return {
+          ...event,
+          culturalPlaceId: {
+            ...event.culturalPlaceId,
+            contact: {
+              ...event.culturalPlaceId.contact,
+              coordinates: {
+                lat: coordinates.coordinates[1], // lat es el segundo elemento
+                lng: coordinates.coordinates[0]  // lng es el primer elemento
+              }
+            }
+          }
+        };
+      }
+    }
+    
+    return event;
   }
 
   async validateEventForTicketPurchase(eventId: string): Promise<Event> {

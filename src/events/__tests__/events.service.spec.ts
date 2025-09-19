@@ -338,4 +338,128 @@ describe('EventsService', () => {
       await expect(service.remove('507f1f77bcf86cd799439011')).rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('coordinate transformation', () => {
+    it('should transform GeoJSON coordinates to {lat, lng} format in findOne', async () => {
+      const eventWithGeoJSONCoordinates = {
+        ...mockEvent,
+        culturalPlaceId: {
+          ...mockEvent.culturalPlaceId,
+          contact: {
+            ...mockEvent.culturalPlaceId.contact,
+            coordinates: {
+              type: 'Point',
+              coordinates: [-58.40879856, -34.61724004] // [lng, lat]
+            }
+          }
+        }
+      };
+
+      repository.findById.mockResolvedValue(eventWithGeoJSONCoordinates);
+
+      const result = await service.findOne('507f1f77bcf86cd799439011');
+
+      expect(result.culturalPlaceId.contact.coordinates).toEqual({
+        lat: -34.61724004,
+        lng: -58.40879856
+      });
+    });
+
+    it('should transform GeoJSON coordinates to {lat, lng} format in findAll', async () => {
+      const eventsWithGeoJSONCoordinates = [{
+        ...mockEvent,
+        culturalPlaceId: {
+          ...mockEvent.culturalPlaceId,
+          contact: {
+            ...mockEvent.culturalPlaceId.contact,
+            coordinates: {
+              type: 'Point',
+              coordinates: [-58.40879856, -34.61724004] // [lng, lat]
+            }
+          }
+        }
+      }];
+
+      repository.findAll.mockResolvedValue(eventsWithGeoJSONCoordinates);
+
+      const result = await service.findAll();
+
+      expect(result[0].culturalPlaceId.contact.coordinates).toEqual({
+        lat: -34.61724004,
+        lng: -58.40879856
+      });
+    });
+
+    it('should transform GeoJSON coordinates to {lat, lng} format in findByCulturalPlace', async () => {
+      const eventsWithGeoJSONCoordinates = [{
+        ...mockEvent,
+        culturalPlaceId: {
+          ...mockEvent.culturalPlaceId,
+          contact: {
+            ...mockEvent.culturalPlaceId.contact,
+            coordinates: {
+              type: 'Point',
+              coordinates: [-58.40879856, -34.61724004] // [lng, lat]
+            }
+          }
+        }
+      }];
+
+      repository.findByCulturalPlace.mockResolvedValue(eventsWithGeoJSONCoordinates);
+
+      const result = await service.findByCulturalPlace('507f1f77bcf86cd799439012');
+
+      expect(result[0].culturalPlaceId.contact.coordinates).toEqual({
+        lat: -34.61724004,
+        lng: -58.40879856
+      });
+    });
+
+    it('should not transform coordinates if already in {lat, lng} format', async () => {
+      const eventWithCorrectFormat = {
+        ...mockEvent,
+        culturalPlaceId: {
+          ...mockEvent.culturalPlaceId,
+          contact: {
+            ...mockEvent.culturalPlaceId.contact,
+            coordinates: {
+              lat: -34.61724004,
+              lng: -58.40879856
+            }
+          }
+        }
+      };
+
+      repository.findById.mockResolvedValue(eventWithCorrectFormat);
+
+      const result = await service.findOne('507f1f77bcf86cd799439011');
+
+      expect(result.culturalPlaceId.contact.coordinates).toEqual({
+        lat: -34.61724004,
+        lng: -58.40879856
+      });
+    });
+
+    it('should handle events without cultural place coordinates', async () => {
+      const eventWithoutCoordinates = {
+        ...mockEvent,
+        culturalPlaceId: {
+          ...mockEvent.culturalPlaceId,
+          contact: {
+            address: 'Agrelo 3045',
+            phone: '49316157',
+            website: 'https://example.com',
+            email: 'info@lugar.com'
+            // Sin coordenadas
+          }
+        }
+      };
+
+      repository.findById.mockResolvedValue(eventWithoutCoordinates);
+
+      const result = await service.findOne('507f1f77bcf86cd799439011');
+
+      expect(result).toEqual(eventWithoutCoordinates);
+    });
+  });
 });
