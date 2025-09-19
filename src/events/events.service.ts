@@ -35,7 +35,7 @@ export class EventsService {
 
   async findAll(query?: any): Promise<any[]> {
     const events = await this.repository.findAll(query);
-    return events.map(event => this.transformEventCoordinates(event));
+    return events.map(event => this.transformEventCoordinates((event as any).toObject ? (event as any).toObject() : event));
   }
 
   async findOne(id: string): Promise<any> {
@@ -43,22 +43,22 @@ export class EventsService {
     if (!event) {
       throw new NotFoundException('Event not found');
     }
-    return this.transformEventCoordinates(event);
+    return this.transformEventCoordinates((event as any).toObject ? (event as any).toObject() : event);
   }
 
   async findByCulturalPlace(culturalPlaceId: string): Promise<any[]> {
     const events = await this.repository.findByCulturalPlace(culturalPlaceId);
-    return events.map(event => this.transformEventCoordinates(event));
+    return events.map(event => this.transformEventCoordinates((event as any).toObject ? (event as any).toObject() : event));
   }
 
   async findByDateRange(startDate: Date, endDate: Date): Promise<any[]> {
     const events = await this.repository.findByDateRange(startDate, endDate);
-    return events.map(event => this.transformEventCoordinates(event));
+    return events.map(event => this.transformEventCoordinates((event as any).toObject ? (event as any).toObject() : event));
   }
 
   async findActiveEvents(): Promise<Event[]> {
     const events = await this.repository.findActiveEvents();
-    return events.map(event => this.transformEventCoordinates(event));
+    return events.map(event => this.transformEventCoordinates((event as any).toObject ? (event as any).toObject() : event));
   }
 
   async update(id: string, updateEventDto: UpdateEventDto): Promise<Event> {
