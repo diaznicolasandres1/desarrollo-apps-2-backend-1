@@ -11,9 +11,9 @@ describe('CulturalPlacesController', () => {
 
   const mockCulturalPlace = {
     _id: '507f1f77bcf86cd799439011',
-    name: 'Modern Art Museum',
-    description: 'A museum dedicated to modern and contemporary art',
-    category: 'Museum',
+    name: 'Museo de Arte Moderno',
+    description: 'Un museo dedicado al arte moderno y contemporáneo',
+    category: 'Museo',
     characteristics: ['Temporary exhibitions'],
     schedules: {
       monday: { open: '10:00', close: '18:00', closed: false },
@@ -70,9 +70,9 @@ describe('CulturalPlacesController', () => {
   describe('create', () => {
     it('should create a cultural place', async () => {
       const createDto: CreateCulturalPlaceDto = {
-        name: 'Art Museum',
-        description: 'An art museum showcasing contemporary works',
-        category: 'Museum',
+        name: 'Museo de Arte',
+        description: 'Un museo de arte que muestra obras contemporáneas',
+        category: 'Museo',
         schedules: mockCulturalPlace.schedules,
         contact: mockCulturalPlace.contact,
         image: 'https://example.com/image.jpg',
@@ -98,7 +98,7 @@ describe('CulturalPlacesController', () => {
     });
 
     it('should return filtered cultural places', async () => {
-      const query = { category: 'Museum' };
+      const query = { category: 'Museo' };
       mockService.findAll.mockResolvedValue([mockCulturalPlace]);
 
       const result = await controller.findAll(query);
@@ -159,10 +159,10 @@ describe('CulturalPlacesController', () => {
     it('should return places by category', async () => {
       mockService.findByCategory.mockResolvedValue([mockCulturalPlace]);
 
-      const result = await controller.findByCategory('Museum');
+      const result = await controller.findByCategory('Museo');
 
       expect(result).toEqual([mockCulturalPlace]);
-      expect(service.findByCategory).toHaveBeenCalledWith('Museum');
+      expect(service.findByCategory).toHaveBeenCalledWith('Museo');
     });
   });
 

@@ -11,7 +11,7 @@ export class CulturalPlace {
   @Prop({ required: true, trim: true })
   description: string;
 
-  @Prop({ required: true, enum: ['Museum', 'Cinema', 'Cultural Center', 'Theater', 'Gallery', 'Library', 'Auditorium'] })
+  @Prop({ required: true, trim: true })
   category: string;
 
   @Prop({ type: [String], default: [] })

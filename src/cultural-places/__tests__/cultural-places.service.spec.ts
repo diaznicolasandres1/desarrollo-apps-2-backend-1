@@ -254,5 +254,29 @@ describe('CulturalPlacesService', () => {
       expect(result.isActive).toBe(false);
       expect(repository.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', { isActive: false });
     });
+
+    it('should accept custom categories', async () => {
+      const customCategoryDto: CreateCulturalPlaceDto = {
+        name: 'Centro de Innovación',
+        description: 'Un centro de innovación tecnológica',
+        category: 'Centro de Innovación', // Categoría personalizada
+        schedules: mockCulturalPlace.schedules,
+        contact: mockCulturalPlace.contact,
+        image: 'https://example.com/image.jpg',
+      };
+
+      const createdPlace = { ...mockCulturalPlace, category: 'Centro de Innovación' };
+      mockRepository.findByName.mockResolvedValue(null);
+      mockRepository.create.mockResolvedValue(createdPlace);
+
+      const result = await service.create(customCategoryDto);
+
+      expect(result.category).toBe('Centro de Innovación');
+      expect(repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'Centro de Innovación'
+        })
+      );
+    });
   });
 });
