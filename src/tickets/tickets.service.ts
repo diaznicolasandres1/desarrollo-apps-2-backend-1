@@ -8,7 +8,7 @@ import { Ticket } from './schemas/ticket.schema';
 import { Types } from 'mongoose';
 import { UserService } from '../users/user/user.service';
 import { EmailService } from '../email/email.service';
-import { EventValidationService } from '../events/event-validation.service';
+import { EventInventoryService } from '../events/event-inventory.service';
 
 @Injectable()
 export class TicketsService {
@@ -18,7 +18,7 @@ export class TicketsService {
     @Inject(TICKET_REPOSITORY) private readonly repository: TicketRepository,
     private readonly userService: UserService,
     private readonly emailService: EmailService,
-    private readonly eventValidationService: EventValidationService
+    private readonly eventInventoryService: EventInventoryService
   ) {}
 
 
@@ -32,12 +32,12 @@ export class TicketsService {
     }
 
     // Validate event exists, is active, and not expired
-    const event = await this.eventValidationService.validateEventForTicketPurchase(eventId);
+    const event = await this.eventInventoryService.validateEventForTicketPurchase(eventId);
 
     // Check ticket availability
-    const isAvailable = await this.eventValidationService.checkTicketAvailability(eventId, ticketType, quantity);
+    const isAvailable = await this.eventInventoryService.checkTicketAvailability(eventId, ticketType, quantity);
     if (!isAvailable) {
-      const availableQuantity = await this.eventValidationService.getTicketAvailability(eventId, ticketType);
+      const availableQuantity = await this.eventInventoryService.getTicketAvailability(eventId, ticketType);
       throw new InsufficientTicketsException(eventId, ticketType, quantity, availableQuantity);
     }
 
@@ -65,7 +65,7 @@ export class TicketsService {
     }
 
     // Update ticket count in event
-    await this.eventValidationService.updateTicketCount(eventId, ticketType, quantity);
+    await this.eventInventoryService.updateTicketCount(eventId, ticketType, quantity);
 
     // Send confirmation email
     try {

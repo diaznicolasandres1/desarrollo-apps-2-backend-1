@@ -7,7 +7,7 @@ import { EVENT_REPOSITORY } from './interfaces/event.repository.token';
 import { Event } from './schemas/event.schema';
 
 @Injectable()
-export class EventValidationService {
+export class EventInventoryService {
   constructor(
     @Inject(EVENT_REPOSITORY) private readonly repository: EventRepository,
   ) {}

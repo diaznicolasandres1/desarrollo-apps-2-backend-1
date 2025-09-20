@@ -7,7 +7,7 @@ import { TICKET_REPOSITORY } from './interfaces/ticket.repository.token';
 import { MongoDBTicketRepository } from './repositories/mongodb-ticket.repository';
 import { EmailModule } from '../email/email.module';
 import { UsersModule } from '../users/users.module';
-import { EventValidationService } from '../events/event-validation.service';
+import { EventInventoryService } from '../events/event-inventory.service';
 import { EVENT_REPOSITORY } from '../events/interfaces/event.repository.token';
 import { MongoDBEventRepository } from '../events/repositories/mongodb-event.repository';
 import { Event, EventSchema } from '../events/schemas/event.schema';
@@ -24,7 +24,7 @@ import { Event, EventSchema } from '../events/schemas/event.schema';
   controllers: [TicketsController],
   providers: [
     TicketsService,
-    EventValidationService,
+    EventInventoryService,
     {
       provide: TICKET_REPOSITORY,
       useClass: MongoDBTicketRepository,

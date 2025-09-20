@@ -5,7 +5,7 @@ import { EventsController } from './events.controller';
 import { Event, EventSchema } from './schemas/event.schema';
 import { EVENT_REPOSITORY } from './interfaces/event.repository.token';
 import { MongoDBEventRepository } from './repositories/mongodb-event.repository';
-import { EventValidationService } from './event-validation.service';
+import { EventInventoryService } from './event-inventory.service';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
@@ -18,12 +18,12 @@ import { NotificationsModule } from '../notifications/notifications.module';
   controllers: [EventsController],
   providers: [
     EventsService,
-    EventValidationService,
+    EventInventoryService,
     {
       provide: EVENT_REPOSITORY,
       useClass: MongoDBEventRepository,
     },
   ],
-  exports: [EventsService, EventValidationService],
+  exports: [EventsService, EventInventoryService],
 })
 export class EventsModule {}
