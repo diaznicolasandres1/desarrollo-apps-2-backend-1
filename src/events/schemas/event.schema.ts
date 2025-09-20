@@ -78,6 +78,9 @@ EventSchema.index({ date: 1, isActive: 1 });
 
 // Virtual for available quantity
 EventSchema.virtual('availableQuantity').get(function() {
+  if (!this.ticketTypes || !Array.isArray(this.ticketTypes)) {
+    return 0;
+  }
   return this.ticketTypes.reduce((total, ticketType) => {
     return total + (ticketType.initialQuantity - ticketType.soldQuantity);
   }, 0);
