@@ -3,6 +3,7 @@ import { InsufficientTicketsException } from '../common/exceptions/insufficient-
 import type { TicketRepository } from './interfaces/ticket.repository.interface';
 import { TICKET_REPOSITORY } from './interfaces/ticket.repository.token';
 import { PurchaseTicketDto } from './dto/purchase-ticket.dto';
+import { PurchaseMultipleTicketsDto } from './dto/purchase-multiple-tickets.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
 import { Ticket } from './schemas/ticket.schema';
 import { Types } from 'mongoose';
@@ -77,6 +78,85 @@ export class TicketsService {
 
     return tickets;
   }
+
+  async purchaseMultipleTickets(purchaseMultipleTicketsDto: PurchaseMultipleTicketsDto): Promise<Ticket[]> {
+    const { tickets: ticketRequests } = purchaseMultipleTicketsDto;
+    
+    // Validate that we have at least one ticket request
+    if (!ticketRequests || ticketRequests.length === 0) {
+      throw new BadRequestException('At least one ticket must be specified');
+    }
+
+    // Validate total quantity across all requests (max 10 per purchase)
+    const totalQuantity = ticketRequests.reduce((sum, req) => sum + req.quantity, 0);
+    if (totalQuantity > 10) {
+      throw new BadRequestException('Total quantity cannot exceed 10 tickets per purchase');
+    }
+
+    const allCreatedTickets: Ticket[] = [];
+    let userId: string | null = null;
+    let eventId: string | null = null;
+
+    // Process each ticket request
+    for (const ticketRequest of ticketRequests) {
+      const { eventId: currentEventId, userId: currentUserId, type: ticketType, quantity } = ticketRequest;
+
+      // Set userId and eventId from first request (assuming all tickets are for same user and event)
+      if (userId === null) userId = currentUserId;
+      if (eventId === null) eventId = currentEventId;
+
+      // Validate quantity for individual request
+      if (quantity < 1 || quantity > 10) {
+        throw new BadRequestException('Quantity must be between 1 and 10 for each ticket type');
+      }
+
+      // Validate event exists, is active, and not expired
+      const event = await this.eventInventoryService.validateEventForTicketPurchase(currentEventId);
+
+      // Check ticket availability
+      const isAvailable = await this.eventInventoryService.checkTicketAvailability(currentEventId, ticketType, quantity);
+      if (!isAvailable) {
+        const availableQuantity = await this.eventInventoryService.getTicketAvailability(currentEventId, ticketType);
+        throw new InsufficientTicketsException(currentEventId, ticketType, quantity, availableQuantity);
+      }
+
+      // Get ticket price from event
+      const ticketTypeData = event.ticketTypes.find(tt => tt.type === ticketType);
+      if (!ticketTypeData) {
+        throw new BadRequestException(`Ticket type ${ticketType} not available for this event`);
+      }
+      const ticketPrice = ticketTypeData.price;
+
+      // Create tickets for this request
+      for (let i = 0; i < quantity; i++) {
+        const ticketData: Partial<Ticket> = {
+          eventId: new Types.ObjectId(currentEventId),
+          userId: new Types.ObjectId(currentUserId),
+          ticketType,
+          price: ticketPrice,
+          status: 'active'
+        };
+        
+        const ticket = await this.repository.create(ticketData);
+        allCreatedTickets.push(ticket);
+      }
+
+      // Update ticket count in event
+      await this.eventInventoryService.updateTicketCount(currentEventId, ticketType, quantity);
+    }
+
+    // Send confirmation email with all tickets
+    try {
+      const event = await this.eventInventoryService.validateEventForTicketPurchase(eventId!);
+      await this.sendTicketConfirmationEmail(allCreatedTickets, event, userId!);
+    } catch (error) {
+      this.logger.error('Error al enviar email de confirmación:', error);
+      // No lanzamos el error para no interrumpir la compra si el email falla
+    }
+
+    return allCreatedTickets;
+  }
+
 
   async findAll(query?: any): Promise<Ticket[]> {
     return this.repository.findAll(query);
@@ -274,6 +354,7 @@ export class TicketsService {
       throw error;
     }
   }
+
 
   async getUsersWithActiveTicketsForEvent(eventId: string): Promise<Array<{
     userId: string;

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TicketsController } from '../tickets.controller';
 import { TicketsService } from '../tickets.service';
 import { PurchaseTicketDto } from '../dto/purchase-ticket.dto';
+import { PurchaseMultipleTicketsDto } from '../dto/purchase-multiple-tickets.dto';
 import { UpdateTicketDto } from '../dto/update-ticket.dto';
 
 describe('TicketsController', () => {
@@ -22,6 +23,7 @@ describe('TicketsController', () => {
 
   const mockService = {
     purchaseTicket: jest.fn(),
+    purchaseMultipleTickets: jest.fn(),
     findAll: jest.fn(),
     findOne: jest.fn(),
     findByEvent: jest.fn(),
@@ -56,22 +58,32 @@ describe('TicketsController', () => {
     jest.clearAllMocks();
   });
 
-  describe('purchaseTickets', () => {
-    const purchaseTicketDto: PurchaseTicketDto = {
-      eventId: '507f1f77bcf86cd799439012',
-      userId: '507f1f77bcf86cd799439013',
-      ticketType: 'general',
-      quantity: 2,
+  describe('purchaseMultipleTickets', () => {
+    const purchaseMultipleTicketsDto: PurchaseMultipleTicketsDto = {
+      tickets: [
+        {
+          eventId: '507f1f77bcf86cd799439012',
+          userId: '507f1f77bcf86cd799439013',
+          type: 'general',
+          quantity: 2,
+        },
+        {
+          eventId: '507f1f77bcf86cd799439012',
+          userId: '507f1f77bcf86cd799439013',
+          type: 'jubilados',
+          quantity: 1,
+        }
+      ]
     };
 
-    it('should purchase tickets successfully', async () => {
+    it('should purchase multiple tickets successfully', async () => {
       const tickets = [mockTicket, { ...mockTicket, _id: '507f1f77bcf86cd799439014' }];
-      service.purchaseTicket.mockResolvedValue(tickets);
+      service.purchaseMultipleTickets.mockResolvedValue(tickets);
 
-      const result = await controller.purchaseTickets(purchaseTicketDto);
+      const result = await controller.purchaseMultipleTickets(purchaseMultipleTicketsDto);
 
       expect(result).toEqual(tickets);
-      expect(service.purchaseTicket).toHaveBeenCalledWith(purchaseTicketDto);
+      expect(service.purchaseMultipleTickets).toHaveBeenCalledWith(purchaseMultipleTicketsDto);
     });
   });
 
