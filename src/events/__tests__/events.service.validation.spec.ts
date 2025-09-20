@@ -5,6 +5,7 @@ import { EVENT_REPOSITORY } from '../interfaces/event.repository.token';
 import { EventNotFoundException } from '../../common/exceptions/event-not-found.exception';
 import { EventInactiveException } from '../../common/exceptions/event-inactive.exception';
 import { EventExpiredException } from '../../common/exceptions/event-expired.exception';
+import { EventNotificationService } from '../../notifications/event-notification.service';
 
 describe('EventsService Validation Tests', () => {
   let service: EventsService;
@@ -64,6 +65,12 @@ describe('EventsService Validation Tests', () => {
         {
           provide: EVENT_REPOSITORY,
           useValue: mockEventRepository,
+        },
+        {
+          provide: EventNotificationService,
+          useValue: {
+            publishEventChange: jest.fn(),
+          },
         },
       ],
     }).compile();

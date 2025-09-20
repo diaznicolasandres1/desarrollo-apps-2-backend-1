@@ -5,14 +5,14 @@ import type { TicketRepository } from '../interfaces/ticket.repository.interface
 import { TICKET_REPOSITORY } from '../interfaces/ticket.repository.token';
 import { PurchaseTicketDto } from '../dto/purchase-ticket.dto';
 import { UpdateTicketDto } from '../dto/update-ticket.dto';
-import { EventsService } from '../../events/events.service';
+import { EventValidationService } from '../../events/event-validation.service';
 import { UserService } from '../../users/user/user.service';
 import { EmailService } from '../../email/email.service';
 
 describe('TicketsService', () => {
   let service: TicketsService;
   let repository: jest.Mocked<TicketRepository>;
-  let eventsService: jest.Mocked<EventsService>;
+  let eventValidationService: jest.Mocked<EventValidationService>;
   let userService: jest.Mocked<UserService>;
   let emailService: jest.Mocked<EmailService>;
   let module: TestingModule;
@@ -54,7 +54,7 @@ describe('TicketsService', () => {
           useValue: mockRepository,
         },
         {
-          provide: EventsService,
+          provide: EventValidationService,
           useValue: {
             validateEventForTicketPurchase: jest.fn(),
             checkTicketAvailability: jest.fn(),
@@ -80,7 +80,7 @@ describe('TicketsService', () => {
 
     service = module.get<TicketsService>(TicketsService);
     repository = module.get(TICKET_REPOSITORY);
-    eventsService = module.get(EventsService) as jest.Mocked<EventsService>;
+    eventValidationService = module.get(EventValidationService) as jest.Mocked<EventValidationService>;
     userService = module.get(UserService) as jest.Mocked<UserService>;
     emailService = module.get(EmailService) as jest.Mocked<EmailService>;
   });
@@ -113,12 +113,12 @@ describe('TicketsService', () => {
       
       const createdTickets = [mockTicket, { ...mockTicket, _id: '507f1f77bcf86cd799439014' }];
       
-      // Mock EventsService methods
-      const eventsService = module.get(EventsService) as jest.Mocked<EventsService>;
-      eventsService.validateEventForTicketPurchase.mockResolvedValue(mockEvent);
-      eventsService.checkTicketAvailability.mockResolvedValue(true);
-      eventsService.getTicketAvailability.mockResolvedValue(5);
-      eventsService.updateTicketCount.mockResolvedValue(undefined);
+      // Mock EventValidationService methods
+      const eventValidationService = module.get(EventValidationService) as jest.Mocked<EventValidationService>;
+      eventValidationService.validateEventForTicketPurchase.mockResolvedValue(mockEvent);
+      eventValidationService.checkTicketAvailability.mockResolvedValue(true);
+      eventValidationService.getTicketAvailability.mockResolvedValue(5);
+      eventValidationService.updateTicketCount.mockResolvedValue(undefined);
       
       repository.create.mockResolvedValueOnce(createdTickets[0]);
       repository.create.mockResolvedValueOnce(createdTickets[1]);
@@ -167,12 +167,12 @@ describe('TicketsService', () => {
         ]
       };
       
-      // Mock EventsService methods
-      const eventsService = module.get(EventsService) as jest.Mocked<EventsService>;
-      eventsService.validateEventForTicketPurchase.mockResolvedValue(mockEvent);
-      eventsService.checkTicketAvailability.mockResolvedValue(true);
-      eventsService.getTicketAvailability.mockResolvedValue(5);
-      eventsService.updateTicketCount.mockResolvedValue(undefined);
+      // Mock EventValidationService methods
+      const eventValidationService = module.get(EventValidationService) as jest.Mocked<EventValidationService>;
+      eventValidationService.validateEventForTicketPurchase.mockResolvedValue(mockEvent);
+      eventValidationService.checkTicketAvailability.mockResolvedValue(true);
+      eventValidationService.getTicketAvailability.mockResolvedValue(5);
+      eventValidationService.updateTicketCount.mockResolvedValue(undefined);
       
       repository.create.mockResolvedValue(mockTicket);
 
@@ -494,12 +494,12 @@ describe('TicketsService', () => {
         ]
       };
 
-      // Mock EventsService methods
-      const eventsService = module.get(EventsService) as jest.Mocked<EventsService>;
-      eventsService.validateEventForTicketPurchase.mockResolvedValue(mockEvent);
-      eventsService.checkTicketAvailability.mockResolvedValue(true);
-      eventsService.getTicketAvailability.mockResolvedValue(3);
-      eventsService.updateTicketCount.mockResolvedValue(undefined);
+      // Mock EventValidationService methods
+      const eventValidationService = module.get(EventValidationService) as jest.Mocked<EventValidationService>;
+      eventValidationService.validateEventForTicketPurchase.mockResolvedValue(mockEvent);
+      eventValidationService.checkTicketAvailability.mockResolvedValue(true);
+      eventValidationService.getTicketAvailability.mockResolvedValue(3);
+      eventValidationService.updateTicketCount.mockResolvedValue(undefined);
 
       repository.create.mockResolvedValue(mockTicket);
 
@@ -541,10 +541,10 @@ describe('TicketsService', () => {
       };
 
       // Mock EventsService methods
-      eventsService.validateEventForTicketPurchase.mockResolvedValue(mockEvent);
-      eventsService.checkTicketAvailability.mockResolvedValue(true);
-      eventsService.getTicketAvailability.mockResolvedValue(5);
-      eventsService.updateTicketCount.mockResolvedValue(undefined);
+      eventValidationService.validateEventForTicketPurchase.mockResolvedValue(mockEvent);
+      eventValidationService.checkTicketAvailability.mockResolvedValue(true);
+      eventValidationService.getTicketAvailability.mockResolvedValue(5);
+      eventValidationService.updateTicketCount.mockResolvedValue(undefined);
       
       userService.findOne.mockResolvedValue(mockUser);
       repository.create.mockResolvedValue(mockTicket);
