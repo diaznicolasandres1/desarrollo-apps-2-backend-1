@@ -5,6 +5,8 @@ import type { TicketRepository } from '../interfaces/ticket.repository.interface
 import { TICKET_REPOSITORY } from '../interfaces/ticket.repository.token';
 import { PurchaseTicketDto } from '../dto/purchase-ticket.dto';
 import { UpdateTicketDto } from '../dto/update-ticket.dto';
+import { PurchaseMultipleTicketsDto } from '../dto/purchase-multiple-tickets.dto';
+import { InsufficientTicketsException } from '../../common/exceptions/insufficient-tickets.exception';
 import { EventInventoryService } from '../../events/event-inventory.service';
 import { UserService } from '../../users/user/user.service';
 import { EmailService } from '../../email/email.service';
@@ -648,6 +650,275 @@ describe('TicketsService', () => {
 
       await expect(service.sendTicketConfirmationEmail(tickets, event, userId))
         .rejects.toThrow('Email service error');
+    });
+  });
+
+  describe('purchaseMultipleTickets', () => {
+    const mockEvent = {
+      _id: '507f1f77bcf86cd799439012',
+      name: 'Test Event',
+      ticketTypes: [
+        { type: 'general', price: 1000, available: 10 },
+        { type: 'vip', price: 2000, available: 5 },
+        { type: 'jubilados', price: 500, available: 3 },
+        { type: 'niños', price: 500, available: 3 }
+      ]
+    };
+
+    const purchaseMultipleTicketsDto: PurchaseMultipleTicketsDto = {
+      tickets: [
+        {
+          eventId: '507f1f77bcf86cd799439012',
+          userId: '507f1f77bcf86cd799439013',
+          type: 'general',
+          quantity: 2
+        },
+        {
+          eventId: '507f1f77bcf86cd799439012',
+          userId: '507f1f77bcf86cd799439013',
+          type: 'vip',
+          quantity: 1
+        }
+      ]
+    };
+
+    beforeEach(() => {
+      eventInventoryService.validateEventForTicketPurchase.mockResolvedValue(mockEvent);
+      eventInventoryService.checkTicketAvailability.mockResolvedValue(true);
+      eventInventoryService.updateTicketCount.mockResolvedValue(undefined);
+      repository.create.mockResolvedValue(mockTicket);
+    });
+
+    it('should purchase multiple tickets successfully', async () => {
+      const result = await service.purchaseMultipleTickets(purchaseMultipleTicketsDto);
+
+      expect(result).toHaveLength(3);
+      expect(eventInventoryService.validateEventForTicketPurchase).toHaveBeenCalledTimes(3); // 2 calls during processing + 1 for email
+      expect(eventInventoryService.checkTicketAvailability).toHaveBeenCalledTimes(2);
+      expect(repository.create).toHaveBeenCalledTimes(3);
+      expect(eventInventoryService.updateTicketCount).toHaveBeenCalledTimes(2);
+    });
+
+    it('should throw error when no tickets provided', async () => {
+      const emptyDto: PurchaseMultipleTicketsDto = { tickets: [] };
+
+      await expect(service.purchaseMultipleTickets(emptyDto))
+        .rejects.toThrow('At least one ticket must be specified');
+    });
+
+    it('should throw error when tickets array is null', async () => {
+      const nullDto: PurchaseMultipleTicketsDto = { tickets: null as any };
+
+      await expect(service.purchaseMultipleTickets(nullDto))
+        .rejects.toThrow('At least one ticket must be specified');
+    });
+
+    it('should throw error when total quantity exceeds 10', async () => {
+      const excessiveDto: PurchaseMultipleTicketsDto = {
+        tickets: [
+          {
+            eventId: '507f1f77bcf86cd799439012',
+            userId: '507f1f77bcf86cd799439013',
+            type: 'general',
+            quantity: 8
+          },
+          {
+            eventId: '507f1f77bcf86cd799439012',
+            userId: '507f1f77bcf86cd799439013',
+            type: 'vip',
+            quantity: 5
+          }
+        ]
+      };
+
+      await expect(service.purchaseMultipleTickets(excessiveDto))
+        .rejects.toThrow('Total quantity cannot exceed 10 tickets per purchase');
+    });
+
+    it('should throw error when individual quantity is less than 1', async () => {
+      const invalidDto: PurchaseMultipleTicketsDto = {
+        tickets: [
+          {
+            eventId: '507f1f77bcf86cd799439012',
+            userId: '507f1f77bcf86cd799439013',
+            type: 'general',
+            quantity: 0
+          }
+        ]
+      };
+
+      await expect(service.purchaseMultipleTickets(invalidDto))
+        .rejects.toThrow('Quantity must be between 1 and 10 for each ticket type');
+    });
+
+    it('should throw error when individual quantity is more than 10', async () => {
+      const invalidDto: PurchaseMultipleTicketsDto = {
+        tickets: [
+          {
+            eventId: '507f1f77bcf86cd799439012',
+            userId: '507f1f77bcf86cd799439013',
+            type: 'general',
+            quantity: 11
+          }
+        ]
+      };
+
+      await expect(service.purchaseMultipleTickets(invalidDto))
+        .rejects.toThrow('Total quantity cannot exceed 10 tickets per purchase');
+    });
+
+    it('should throw error when tickets are not available', async () => {
+      eventInventoryService.checkTicketAvailability.mockResolvedValue(false);
+      eventInventoryService.getTicketAvailability.mockResolvedValue(1);
+
+      await expect(service.purchaseMultipleTickets(purchaseMultipleTicketsDto))
+        .rejects.toThrow(InsufficientTicketsException);
+    });
+
+    it('should throw error when ticket type is not available for event', async () => {
+      const invalidEvent = {
+        ...mockEvent,
+        ticketTypes: [
+          { type: 'general', price: 1000, available: 10 }
+        ]
+      };
+      eventInventoryService.validateEventForTicketPurchase.mockResolvedValue(invalidEvent);
+
+      const invalidDto: PurchaseMultipleTicketsDto = {
+        tickets: [
+          {
+            eventId: '507f1f77bcf86cd799439012',
+            userId: '507f1f77bcf86cd799439013',
+            type: 'vip',
+            quantity: 1
+          }
+        ]
+      };
+
+      await expect(service.purchaseMultipleTickets(invalidDto))
+        .rejects.toThrow('Ticket type vip not available for this event');
+    });
+
+    it('should handle email sending failure gracefully', async () => {
+      const mockUser = {
+        _id: '507f1f77bcf86cd799439013',
+        name: 'Test User',
+        email: 'test@example.com',
+      };
+
+      userService.findOne.mockResolvedValue(mockUser);
+      emailService.sendTicketConfirmationEmail.mockRejectedValue(new Error('Email failed'));
+
+      const result = await service.purchaseMultipleTickets(purchaseMultipleTicketsDto);
+
+      expect(result).toHaveLength(3);
+      expect(repository.create).toHaveBeenCalledTimes(3);
+      // Should not throw error even if email fails
+    });
+
+    it('should create tickets with correct data structure', async () => {
+      await service.purchaseMultipleTickets(purchaseMultipleTicketsDto);
+
+      expect(repository.create).toHaveBeenCalledWith({
+        eventId: expect.any(Object),
+        userId: expect.any(Object),
+        ticketType: 'general',
+        price: 1000,
+        status: 'active'
+      });
+
+      expect(repository.create).toHaveBeenCalledWith({
+        eventId: expect.any(Object),
+        userId: expect.any(Object),
+        ticketType: 'vip',
+        price: 2000,
+        status: 'active'
+      });
+    });
+  });
+
+  describe('markAsUsed', () => {
+    it('should mark ticket as used successfully', async () => {
+      const usedTicket = { ...mockTicket, status: 'used' };
+      repository.findById.mockResolvedValue(mockTicket);
+      repository.markAsUsed.mockResolvedValue(usedTicket);
+
+      const result = await service.markAsUsed('507f1f77bcf86cd799439011');
+
+      expect(result).toEqual(usedTicket);
+      expect(repository.findById).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+      expect(repository.markAsUsed).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+    });
+
+    it('should throw error when ticket not found', async () => {
+      repository.findById.mockResolvedValue(null);
+
+      await expect(service.markAsUsed('507f1f77bcf86cd799439011'))
+        .rejects.toThrow('Ticket not found');
+    });
+
+    it('should throw error when ticket is not active', async () => {
+      const inactiveTicket = { ...mockTicket, status: 'cancelled' };
+      repository.findById.mockResolvedValue(inactiveTicket);
+
+      await expect(service.markAsUsed('507f1f77bcf86cd799439011'))
+        .rejects.toThrow('Ticket is not active');
+    });
+
+    it('should throw error when repository returns null on update', async () => {
+      repository.findById.mockResolvedValue(mockTicket);
+      repository.markAsUsed.mockResolvedValue(null);
+
+      await expect(service.markAsUsed('507f1f77bcf86cd799439011'))
+        .rejects.toThrow('Ticket not found');
+    });
+  });
+
+  describe('cancelTicket', () => {
+    it('should cancel ticket successfully', async () => {
+      const cancelledTicket = { ...mockTicket, status: 'cancelled' };
+      repository.findById.mockResolvedValue(mockTicket);
+      repository.cancelTicket.mockResolvedValue(cancelledTicket);
+
+      const result = await service.cancelTicket('507f1f77bcf86cd799439011', 'User requested');
+
+      expect(result).toEqual(cancelledTicket);
+      expect(repository.findById).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+      expect(repository.cancelTicket).toHaveBeenCalledWith('507f1f77bcf86cd799439011', 'User requested');
+    });
+
+    it('should cancel ticket without reason', async () => {
+      const cancelledTicket = { ...mockTicket, status: 'cancelled' };
+      repository.findById.mockResolvedValue(mockTicket);
+      repository.cancelTicket.mockResolvedValue(cancelledTicket);
+
+      const result = await service.cancelTicket('507f1f77bcf86cd799439011');
+
+      expect(result).toEqual(cancelledTicket);
+      expect(repository.cancelTicket).toHaveBeenCalledWith('507f1f77bcf86cd799439011', undefined);
+    });
+
+    it('should throw error when ticket not found', async () => {
+      repository.findById.mockResolvedValue(null);
+
+      await expect(service.cancelTicket('507f1f77bcf86cd799439011'))
+        .rejects.toThrow('Ticket not found');
+    });
+
+    it('should throw error when ticket is not active', async () => {
+      const inactiveTicket = { ...mockTicket, status: 'used' };
+      repository.findById.mockResolvedValue(inactiveTicket);
+
+      await expect(service.cancelTicket('507f1f77bcf86cd799439011'))
+        .rejects.toThrow('Ticket is not active');
+    });
+
+    it('should throw error when repository returns null on update', async () => {
+      repository.findById.mockResolvedValue(mockTicket);
+      repository.cancelTicket.mockResolvedValue(null);
+
+      await expect(service.cancelTicket('507f1f77bcf86cd799439011'))
+        .rejects.toThrow('Ticket not found');
     });
   });
 });
