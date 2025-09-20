@@ -244,7 +244,95 @@ describe('TicketsService', () => {
       const result = await service.findByUser('507f1f77bcf86cd799439013');
 
       expect(result).toEqual(tickets);
-      expect(repository.findByUser).toHaveBeenCalledWith('507f1f77bcf86cd799439013');
+      expect(repository.findByUser).toHaveBeenCalledWith('507f1f77bcf86cd799439013', undefined);
+    });
+  });
+
+  describe('findByUserWithEventDetails', () => {
+    it('should return tickets for a user with populated event details', async () => {
+      const fixedDate = new Date('2025-12-25T19:00:00.000Z');
+      const mockTicketWithEventDetails = {
+        ...mockTicket,
+        toObject: jest.fn().mockReturnValue({
+          ...mockTicket,
+          eventId: {
+            _id: '507f1f77bcf86cd799439012',
+            name: 'Test Event',
+            description: 'Test Description',
+            date: fixedDate,
+            time: '19:00',
+            culturalPlaceId: {
+              _id: '507f1f77bcf86cd799439014',
+              name: 'Test Cultural Place',
+              contact: {
+                address: 'Test Address'
+              }
+            }
+          }
+        })
+      };
+
+      repository.findByUser.mockResolvedValue([mockTicketWithEventDetails]);
+
+      const result = await service.findByUserWithEventDetails('507f1f77bcf86cd799439013');
+
+      expect(result).toEqual([{
+        ...mockTicket,
+        eventId: {
+          _id: '507f1f77bcf86cd799439012',
+          name: 'Test Event',
+          description: 'Test Description',
+          date: fixedDate,
+          time: '19:00',
+          culturalPlaceId: {
+            _id: '507f1f77bcf86cd799439014',
+            name: 'Test Cultural Place',
+            contact: {
+              address: 'Test Address'
+            }
+          }
+        }
+      }]);
+      expect(repository.findByUser).toHaveBeenCalledWith('507f1f77bcf86cd799439013', {
+        populate: [
+          {
+            path: 'eventId',
+            select: '_id name description date time',
+            populate: {
+              path: 'culturalPlaceId',
+              select: '_id name contact.address contact.image'
+            }
+          }
+        ]
+      });
+    });
+
+    it('should handle tickets without toObject method', async () => {
+      const mockTicketWithoutToObject = {
+        ...mockTicket,
+        eventId: {
+          _id: '507f1f77bcf86cd799439012',
+          name: 'Test Event'
+        }
+      };
+
+      repository.findByUser.mockResolvedValue([mockTicketWithoutToObject]);
+
+      const result = await service.findByUserWithEventDetails('507f1f77bcf86cd799439013');
+
+      expect(result).toEqual([mockTicketWithoutToObject]);
+      expect(repository.findByUser).toHaveBeenCalledWith('507f1f77bcf86cd799439013', {
+        populate: [
+          {
+            path: 'eventId',
+            select: '_id name description date time',
+            populate: {
+              path: 'culturalPlaceId',
+              select: '_id name contact.address contact.image'
+            }
+          }
+        ]
+      });
     });
   });
 
