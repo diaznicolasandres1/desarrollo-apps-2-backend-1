@@ -13,6 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { TicketsService } from './tickets.service';
 import { PurchaseTicketDto } from './dto/purchase-ticket.dto';
+import { PurchaseMultipleTicketsDto } from './dto/purchase-multiple-tickets.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
 
 @ApiTags('tickets')
@@ -24,11 +25,11 @@ export class TicketsController {
 
   @Post('purchase')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Purchase tickets for an event' })
+  @ApiOperation({ summary: 'Purchase multiple tickets for different events and types' })
   @ApiResponse({ status: 201, description: 'Tickets purchased successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - validation error' })
-  async purchaseTickets(@Body() purchaseTicketDto: PurchaseTicketDto) {
-    return this.ticketsService.purchaseTicket(purchaseTicketDto);
+  async purchaseMultipleTickets(@Body() purchaseMultipleTicketsDto: PurchaseMultipleTicketsDto) {
+    return this.ticketsService.purchaseMultipleTickets(purchaseMultipleTicketsDto);
   }
 
   @Get()
