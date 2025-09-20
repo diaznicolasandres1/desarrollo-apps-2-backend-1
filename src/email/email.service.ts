@@ -459,4 +459,358 @@ export class EmailService {
       </html>
     `;
   }
+
+  async sendEventModificationEmail(data: {
+    userEmail: string;
+    userName: string;
+    event: any;
+    modificationType: string;
+    oldValue: any;
+    newValue: any;
+    ticketCount: number;
+    ticketTypes: string[];
+  }): Promise<boolean> {
+    const { userEmail, userName, event, modificationType, oldValue, newValue, ticketCount, ticketTypes } = data;
+    
+    const subject = this.getModificationSubject(modificationType, event.name);
+    const html = this.generateEventModificationHTML(userName, event, modificationType, oldValue, newValue, ticketCount, ticketTypes);
+    
+    return this.sendEmail({
+      to: userEmail,
+      subject,
+      html,
+    });
+  }
+
+  async sendEventCancellationEmail(data: {
+    userEmail: string;
+    userName: string;
+    event: any;
+    ticketCount: number;
+    ticketTypes: string[];
+    cancellationReason?: string;
+  }): Promise<boolean> {
+    const { userEmail, userName, event, ticketCount, ticketTypes, cancellationReason } = data;
+    
+    const subject = `❌ Evento Cancelado - ${event.name}`;
+    const html = this.generateEventCancellationHTML(userName, event, ticketCount, ticketTypes, cancellationReason);
+    
+    return this.sendEmail({
+      to: userEmail,
+      subject,
+      html,
+    });
+  }
+
+  private getModificationSubject(modificationType: string, eventName: string): string {
+    const subjects = {
+      'date_change': `⚠️ Cambio de Fecha - ${eventName}`,
+      'time_change': `⚠️ Cambio de Hora - ${eventName}`,
+      'location_change': `📍 Nueva Ubicación - ${eventName}`,
+      'ticket_change': `🎫 Cambio en Entradas - ${eventName}`,
+      'cancellation': `❌ Evento Cancelado - ${eventName}`
+    };
+    return subjects[modificationType] || `⚠️ Cambio Importante - ${eventName}`;
+  }
+
+  private generateEventModificationHTML(
+    userName: string,
+    event: any,
+    modificationType: string,
+    oldValue: any,
+    newValue: any,
+    ticketCount: number,
+    ticketTypes: string[]
+  ): string {
+    const modificationContent = this.getModificationContent(modificationType, oldValue, newValue);
+    
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Cambio Importante en tu Evento</title>
+        <style>
+          body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f8f9fa;
+          }
+          .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background-color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          }
+          .header { 
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            padding: 30px 20px; 
+            text-align: center; 
+            color: white;
+          }
+          .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+          }
+          .content { padding: 30px 20px; }
+          .alert-box {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #f39c12;
+          }
+          .change-details {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+          }
+          .event-details {
+            background-color: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+          }
+          .ticket-info {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+          }
+          .footer { 
+            background-color: #495057; 
+            padding: 20px; 
+            text-align: center; 
+            color: white;
+            font-size: 0.9em;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>⚠️ Cambio Importante</h1>
+            <p>Tu evento ha sido modificado</p>
+          </div>
+          
+          <div class="content">
+            <p>Hola <strong>${userName}</strong>,</p>
+            
+            <div class="alert-box">
+              <h3>🚨 Atención Requerida</h3>
+              <p>El evento para el cual tienes entradas ha sido modificado. Por favor revisa los cambios a continuación.</p>
+            </div>
+            
+            <div class="change-details">
+              <h3>📝 Detalles del Cambio</h3>
+              ${modificationContent}
+            </div>
+            
+            <div class="event-details">
+              <h3>📅 Información Actualizada del Evento</h3>
+              <p><strong>Evento:</strong> ${event.name}</p>
+              <p><strong>Fecha:</strong> ${new Date(event.date).toLocaleDateString('es-ES')}</p>
+              <p><strong>Hora:</strong> ${event.time}</p>
+              <p><strong>Descripción:</strong> ${event.description}</p>
+            </div>
+            
+            <div class="ticket-info">
+              <h3>🎫 Tus Entradas</h3>
+              <p><strong>Cantidad de entradas:</strong> ${ticketCount}</p>
+              <p><strong>Tipos de entrada:</strong> ${ticketTypes.join(', ')}</p>
+              <p><strong>Estado:</strong> Todas tus entradas siguen siendo válidas</p>
+            </div>
+            
+            <p>Lamentamos cualquier inconveniente que esto pueda causar.</p>
+            
+            <p>Saludos cordiales,<br>
+            El equipo de Tickets</p>
+          </div>
+          
+          <div class="footer">
+            <p>Este es un email automático, por favor no responder a este mensaje.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private generateEventCancellationHTML(
+    userName: string,
+    event: any,
+    ticketCount: number,
+    ticketTypes: string[],
+    cancellationReason?: string
+  ): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Evento Cancelado</title>
+        <style>
+          body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f8f9fa;
+          }
+          .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background-color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          }
+          .header { 
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            padding: 30px 20px; 
+            text-align: center; 
+            color: white;
+          }
+          .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+          }
+          .content { padding: 30px 20px; }
+          .cancellation-box {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #dc3545;
+          }
+          .refund-info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+          }
+          .event-details {
+            background-color: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+          }
+          .ticket-info {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+          }
+          .footer { 
+            background-color: #495057; 
+            padding: 20px; 
+            text-align: center; 
+            color: white;
+            font-size: 0.9em;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>❌ Evento Cancelado</h1>
+            <p>Información importante sobre tu compra</p>
+          </div>
+          
+          <div class="content">
+            <p>Hola <strong>${userName}</strong>,</p>
+            
+            <div class="cancellation-box">
+              <h3>🚨 Evento Cancelado</h3>
+              <p>Lamentamos informarte que el evento <strong>"${event.name}"</strong> ha sido cancelado.</p>
+              ${cancellationReason ? `<p><strong>Motivo de la cancelación:</strong> ${cancellationReason}</p>` : ''}
+            </div>
+            
+            <div class="refund-info">
+              <h3>💰 Proceso de Reembolso</h3>
+              <ul>
+                <li><strong>Reembolso automático:</strong> Tu dinero será devuelto automáticamente</li>
+                <li><strong>Tiempo de procesamiento:</strong> 3-5 días hábiles</li>
+                <li><strong>Método de reembolso:</strong> Al método de pago original</li>
+                <li><strong>Sin acción requerida:</strong> No necesitas hacer nada</li>
+              </ul>
+            </div>
+            
+            <div class="event-details">
+              <h3>📅 Evento Cancelado</h3>
+              <p><strong>Evento:</strong> ${event.name}</p>
+              <p><strong>Fecha:</strong> ${new Date(event.date).toLocaleDateString('es-ES')}</p>
+              <p><strong>Hora:</strong> ${event.time}</p>
+            </div>
+            
+            <div class="ticket-info">
+              <h3>🎫 Entradas Afectadas</h3>
+              <p><strong>Cantidad de entradas:</strong> ${ticketCount}</p>
+              <p><strong>Tipos de entrada:</strong> ${ticketTypes.join(', ')}</p>
+              <p><strong>Estado:</strong> Todas las entradas han sido canceladas automáticamente</p>
+            </div>
+            
+            <p>Sentimos mucho las molestias causadas por esta cancelación. Esperamos poder ofrecerte eventos de calidad en el futuro.</p>
+            
+            <p>Si tienes alguna pregunta sobre el reembolso, no dudes en contactarnos.</p>
+            
+            <p>Saludos cordiales,<br>
+            El equipo de Tickets</p>
+          </div>
+          
+          <div class="footer">
+            <p>Este es un email automático, por favor no responder a este mensaje.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private getModificationContent(modificationType: string, oldValue: any, newValue: any): string {
+    switch (modificationType) {
+      case 'date_change':
+        return `
+          <p><strong>Fecha:</strong> 
+            <span style="color: #dc3545; text-decoration: line-through;">${new Date(oldValue).toLocaleDateString('es-ES')}</span>
+            → 
+            <span style="color: #28a745; font-weight: 600;">${new Date(newValue).toLocaleDateString('es-ES')}</span>
+          </p>
+        `;
+      
+      case 'time_change':
+        return `
+          <p><strong>Hora:</strong> 
+            <span style="color: #dc3545; text-decoration: line-through;">${oldValue}</span>
+            → 
+            <span style="color: #28a745; font-weight: 600;">${newValue}</span>
+          </p>
+        `;
+      
+      case 'location_change':
+        return `
+          <p><strong>Ubicación:</strong> 
+            <span style="color: #dc3545; text-decoration: line-through;">${oldValue}</span>
+            → 
+            <span style="color: #28a745; font-weight: 600;">${newValue}</span>
+          </p>
+        `;
+      
+      default:
+        return `<p><strong>Cambio:</strong> El evento ha sido modificado</p>`;
+    }
+  }
 }

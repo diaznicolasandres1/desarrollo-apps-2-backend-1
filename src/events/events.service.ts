@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, Inject, Logger } from '@nestjs/common';
 import { EventNotFoundException } from '../common/exceptions/event-not-found.exception';
 import { EventInactiveException } from '../common/exceptions/event-inactive.exception';
 import { EventExpiredException } from '../common/exceptions/event-expired.exception';
@@ -9,11 +9,15 @@ import { UpdateEventDto } from './dto/update-event.dto';
 import { Event } from './schemas/event.schema';
 import { EventWithCulturalPlace } from './interfaces/event-with-cultural-place.interface';
 import { Types } from 'mongoose';
+import { EventNotificationService } from '../notifications/event-notification.service';
 
 @Injectable()
 export class EventsService {
+  private readonly logger = new Logger(EventsService.name);
+
   constructor(
-    @Inject(EVENT_REPOSITORY) private readonly repository: EventRepository
+    @Inject(EVENT_REPOSITORY) private readonly repository: EventRepository,
+    private readonly eventNotificationService: EventNotificationService
   ) {}
 
   async create(createEventDto: CreateEventDto): Promise<Event> {
@@ -84,20 +88,60 @@ export class EventsService {
       updateData.culturalPlaceId = new Types.ObjectId(updateEventDto.culturalPlaceId);
     }
 
+    // Detectar cambios críticos antes de actualizar
+    const changeType = this.detectCriticalChange(event, updateData);
+    
     const updatedEvent = await this.repository.update(id, updateData);
 
     if (!updatedEvent) {
       throw new NotFoundException('Event not found');
     }
 
+    // Publicar al tópico si hay cambio crítico
+    if (changeType) {
+      try {
+        await this.eventNotificationService.publishEventChange({
+          event: updatedEvent,
+          changeType: changeType,
+        });
+      } catch (error) {
+        this.logger.error('Error publicando evento de cambio:', error);
+        // No lanzamos el error para no interrumpir la actualización del evento
+      }
+    }
+
     return updatedEvent;
   }
 
   async toggleActive(id: string): Promise<Event> {
+    const originalEvent = await this.repository.findById(id);
+    if (!originalEvent) {
+      throw new NotFoundException('Event not found');
+    }
+
     const event = await this.repository.toggleActive(id);
     if (!event) {
       throw new NotFoundException('Event not found');
     }
+
+    // Detectar si cambió el estado activo
+    const changeType = originalEvent.isActive !== event.isActive 
+      ? (event.isActive ? 'activation' : 'cancellation')
+      : null;
+
+    // Publicar al tópico si hay cambio de estado
+    if (changeType) {
+      try {
+        await this.eventNotificationService.publishEventChange({
+          event: event,
+          changeType: changeType,
+        });
+      } catch (error) {
+        this.logger.error('Error publicando evento de cambio de estado:', error);
+        // No lanzamos el error para no interrumpir la actualización del evento
+      }
+    }
+
     return event;
   }
 
@@ -245,5 +289,24 @@ export class EventsService {
     if (!result) {
       throw new BadRequestException(`Failed to update ticket count for event ${eventId}, type ${ticketType}`);
     }
+  }
+
+  private detectCriticalChange(originalEvent: any, updateData: any): 'location_change' | 'date_change' | 'time_change' | null {
+    // Cambio de lugar cultural
+    if (updateData.culturalPlaceId && updateData.culturalPlaceId.toString() !== originalEvent.culturalPlaceId.toString()) {
+      return 'location_change';
+    }
+
+    // Cambio de fecha
+    if (updateData.date && new Date(updateData.date).getTime() !== new Date(originalEvent.date).getTime()) {
+      return 'date_change';
+    }
+
+    // Cambio de hora
+    if (updateData.time && updateData.time !== originalEvent.time) {
+      return 'time_change';
+    }
+
+    return null;
   }
 }

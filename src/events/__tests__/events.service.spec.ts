@@ -5,6 +5,7 @@ import type { EventRepository } from '../interfaces/event.repository.interface';
 import { EVENT_REPOSITORY } from '../interfaces/event.repository.token';
 import { CreateEventDto } from '../dto/create-event.dto';
 import { UpdateEventDto } from '../dto/update-event.dto';
+import { EventNotificationService } from '../../notifications/event-notification.service';
 
 describe('EventsService', () => {
   let service: EventsService;
@@ -72,6 +73,12 @@ describe('EventsService', () => {
         {
           provide: EVENT_REPOSITORY,
           useValue: mockRepository,
+        },
+        {
+          provide: EventNotificationService,
+          useValue: {
+            publishEventChange: jest.fn(),
+          },
         },
       ],
     }).compile();
