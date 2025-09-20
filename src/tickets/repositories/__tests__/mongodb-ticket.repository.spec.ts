@@ -198,4 +198,81 @@ describe('MongoDBTicketRepository', () => {
       expect(result).toBe(5);
     });
   });
+
+  describe('findByUser', () => {
+    it('should find tickets by user without options', async () => {
+      const userId = '507f1f77bcf86cd799439011';
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([mockTicket]),
+      };
+      
+      (model.find as jest.Mock).mockReturnValue(mockQuery);
+
+      const result = await repository.findByUser(userId);
+
+      expect(model.find).toHaveBeenCalledWith({ userId: new Types.ObjectId(userId) });
+      expect(mockQuery.sort).toHaveBeenCalledWith({ createdAt: -1 });
+      expect(mockQuery.exec).toHaveBeenCalled();
+      expect(result).toEqual([mockTicket]);
+    });
+
+    it('should find tickets by user with populate options', async () => {
+      const userId = '507f1f77bcf86cd799439011';
+      const options = {
+        populate: [
+          {
+            path: 'eventId',
+            select: '_id name description date time',
+            populate: {
+              path: 'culturalPlaceId',
+              select: '_id name contact.address contact.image'
+            }
+          }
+        ]
+      };
+      
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        populate: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([mockTicket]),
+      };
+      
+      (model.find as jest.Mock).mockReturnValue(mockQuery);
+
+      const result = await repository.findByUser(userId, options);
+
+      expect(model.find).toHaveBeenCalledWith({ userId: new Types.ObjectId(userId) });
+      expect(mockQuery.sort).toHaveBeenCalledWith({ createdAt: -1 });
+      expect(mockQuery.populate).toHaveBeenCalledWith({
+        path: 'eventId',
+        select: '_id name description date time',
+        populate: {
+          path: 'culturalPlaceId',
+          select: '_id name contact.address contact.image'
+        }
+      });
+      expect(mockQuery.exec).toHaveBeenCalled();
+      expect(result).toEqual([mockTicket]);
+    });
+
+    it('should find tickets by user with options but no populate', async () => {
+      const userId = '507f1f77bcf86cd799439011';
+      const options = { someOtherOption: true };
+      
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([mockTicket]),
+      };
+      
+      (model.find as jest.Mock).mockReturnValue(mockQuery);
+
+      const result = await repository.findByUser(userId, options);
+
+      expect(model.find).toHaveBeenCalledWith({ userId: new Types.ObjectId(userId) });
+      expect(mockQuery.sort).toHaveBeenCalledWith({ createdAt: -1 });
+      expect(mockQuery.exec).toHaveBeenCalled();
+      expect(result).toEqual([mockTicket]);
+    });
+  });
 });
