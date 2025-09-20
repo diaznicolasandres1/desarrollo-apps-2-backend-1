@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { TicketsService } from '../tickets.service';
-import { EventsService } from '../../events/events.service';
+import { EventInventoryService } from '../../events/event-inventory.service';
 import { TICKET_REPOSITORY } from '../interfaces/ticket.repository.token';
 import { EventNotFoundException } from '../../common/exceptions/event-not-found.exception';
 import { EventInactiveException } from '../../common/exceptions/event-inactive.exception';
@@ -12,7 +12,7 @@ import { EmailService } from '../../email/email.service';
 
 describe('TicketsService Integration Tests', () => {
   let service: TicketsService;
-  let eventsService: EventsService;
+  let eventInventoryService: EventInventoryService;
   let mockTicketRepository: any;
 
   const mockEvent = {
@@ -88,7 +88,7 @@ describe('TicketsService Integration Tests', () => {
           useValue: mockTicketRepository,
         },
         {
-          provide: EventsService,
+          provide: EventInventoryService,
           useValue: {
             validateEventForTicketPurchase: jest.fn(),
             checkTicketAvailability: jest.fn(),
@@ -112,7 +112,7 @@ describe('TicketsService Integration Tests', () => {
     }).compile();
 
     service = module.get<TicketsService>(TicketsService);
-    eventsService = module.get<EventsService>(EventsService);
+    eventInventoryService = module.get<EventInventoryService>(EventInventoryService);
   });
 
   describe('purchaseTicket', () => {
@@ -124,7 +124,7 @@ describe('TicketsService Integration Tests', () => {
     };
 
     it('should throw EventNotFoundException when event does not exist', async () => {
-      jest.spyOn(eventsService, 'validateEventForTicketPurchase').mockRejectedValue(
+      jest.spyOn(eventInventoryService, 'validateEventForTicketPurchase').mockRejectedValue(
         new EventNotFoundException('507f1f77bcf86cd799439011')
       );
 
@@ -134,7 +134,7 @@ describe('TicketsService Integration Tests', () => {
     });
 
     it('should throw EventInactiveException when event is not active', async () => {
-      jest.spyOn(eventsService, 'validateEventForTicketPurchase').mockRejectedValue(
+      jest.spyOn(eventInventoryService, 'validateEventForTicketPurchase').mockRejectedValue(
         new EventInactiveException('507f1f77bcf86cd799439011')
       );
 
@@ -144,7 +144,7 @@ describe('TicketsService Integration Tests', () => {
     });
 
     it('should throw EventExpiredException when event date has passed', async () => {
-      jest.spyOn(eventsService, 'validateEventForTicketPurchase').mockRejectedValue(
+      jest.spyOn(eventInventoryService, 'validateEventForTicketPurchase').mockRejectedValue(
         new EventExpiredException('507f1f77bcf86cd799439011', new Date('2020-01-01'))
       );
 
@@ -154,9 +154,9 @@ describe('TicketsService Integration Tests', () => {
     });
 
     it('should throw InsufficientTicketsException when not enough tickets available', async () => {
-      jest.spyOn(eventsService, 'validateEventForTicketPurchase').mockResolvedValue(mockEvent);
-      jest.spyOn(eventsService, 'checkTicketAvailability').mockResolvedValue(false);
-      jest.spyOn(eventsService, 'getTicketAvailability').mockResolvedValue(1);
+      jest.spyOn(eventInventoryService, 'validateEventForTicketPurchase').mockResolvedValue(mockEvent);
+      jest.spyOn(eventInventoryService, 'checkTicketAvailability').mockResolvedValue(false);
+      jest.spyOn(eventInventoryService, 'getTicketAvailability').mockResolvedValue(1);
 
       await expect(service.purchaseTicket(purchaseTicketDto)).rejects.toThrow(
         InsufficientTicketsException
@@ -199,9 +199,9 @@ describe('TicketsService Integration Tests', () => {
         }
       ];
 
-      jest.spyOn(eventsService, 'validateEventForTicketPurchase').mockResolvedValue(mockEvent);
-      jest.spyOn(eventsService, 'checkTicketAvailability').mockResolvedValue(true);
-      jest.spyOn(eventsService, 'updateTicketCount').mockResolvedValue(undefined);
+      jest.spyOn(eventInventoryService, 'validateEventForTicketPurchase').mockResolvedValue(mockEvent);
+      jest.spyOn(eventInventoryService, 'checkTicketAvailability').mockResolvedValue(true);
+      jest.spyOn(eventInventoryService, 'updateTicketCount').mockResolvedValue(undefined);
       mockTicketRepository.create
         .mockResolvedValueOnce(mockTickets[0])
         .mockResolvedValueOnce(mockTickets[1]);
@@ -212,7 +212,7 @@ describe('TicketsService Integration Tests', () => {
       expect(result[0].ticketType).toBe('general');
       expect(result[0].price).toBe(1000);
       expect(mockTicketRepository.create).toHaveBeenCalledTimes(2);
-      expect(eventsService.updateTicketCount).toHaveBeenCalledWith(
+      expect(eventInventoryService.updateTicketCount).toHaveBeenCalledWith(
         '507f1f77bcf86cd799439011',
         'general',
         2
@@ -231,15 +231,15 @@ describe('TicketsService Integration Tests', () => {
         }
       ];
 
-      jest.spyOn(eventsService, 'validateEventForTicketPurchase').mockResolvedValue(mockEvent);
-      jest.spyOn(eventsService, 'checkTicketAvailability').mockResolvedValue(true);
-      jest.spyOn(eventsService, 'updateTicketCount').mockResolvedValue(undefined);
+      jest.spyOn(eventInventoryService, 'validateEventForTicketPurchase').mockResolvedValue(mockEvent);
+      jest.spyOn(eventInventoryService, 'checkTicketAvailability').mockResolvedValue(true);
+      jest.spyOn(eventInventoryService, 'updateTicketCount').mockResolvedValue(undefined);
       mockTicketRepository.create.mockResolvedValue(mockTickets[0]);
 
       const purchaseDto = { ...purchaseTicketDto, ticketType: 'vip', quantity: 1 };
       await service.purchaseTicket(purchaseDto);
 
-      expect(eventsService.updateTicketCount).toHaveBeenCalledWith(
+      expect(eventInventoryService.updateTicketCount).toHaveBeenCalledWith(
         '507f1f77bcf86cd799439011',
         'vip',
         1

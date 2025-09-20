@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, Inject, Logger } from '@nestjs/common';
 import { EventNotFoundException } from '../common/exceptions/event-not-found.exception';
 import { EventInactiveException } from '../common/exceptions/event-inactive.exception';
 import { EventExpiredException } from '../common/exceptions/event-expired.exception';
@@ -9,11 +9,15 @@ import { UpdateEventDto } from './dto/update-event.dto';
 import { Event } from './schemas/event.schema';
 import { EventWithCulturalPlace } from './interfaces/event-with-cultural-place.interface';
 import { Types } from 'mongoose';
+import { EventNotificationService } from '../notifications/event-notification.service';
 
 @Injectable()
 export class EventsService {
+  private readonly logger = new Logger(EventsService.name);
+
   constructor(
-    @Inject(EVENT_REPOSITORY) private readonly repository: EventRepository
+    @Inject(EVENT_REPOSITORY) private readonly repository: EventRepository,
+    private readonly eventNotificationService: EventNotificationService
   ) {}
 
   async create(createEventDto: CreateEventDto): Promise<Event> {
@@ -62,8 +66,8 @@ export class EventsService {
   }
 
   async update(id: string, updateEventDto: UpdateEventDto): Promise<Event> {
-    const event = await this.repository.findById(id);
-    if (!event) {
+    const originalEvent = await this.repository.findById(id);
+    if (!originalEvent) {
       throw new NotFoundException('Event not found');
     }
 
@@ -84,20 +88,74 @@ export class EventsService {
       updateData.culturalPlaceId = new Types.ObjectId(updateEventDto.culturalPlaceId);
     }
 
+    const changeType = this.detectCriticalChange(originalEvent, updateData);
+
     const updatedEvent = await this.repository.update(id, updateData);
 
     if (!updatedEvent) {
       throw new NotFoundException('Event not found');
     }
 
+    if (changeType) {
+      try {
+        // Para location_change, necesitamos obtener los nombres de los lugares culturales
+        let oldValue, newValue;
+        if (changeType === 'location_change') {
+          // Obtener el evento actualizado con populate para tener los nombres
+          const updatedEventWithPopulate = await this.repository.findById(id);
+          oldValue = originalEvent.culturalPlaceId?.name || 'N/A';
+          newValue = updatedEventWithPopulate?.culturalPlaceId?.name || 'N/A';
+        } else {
+          const changeValues = await this.getChangeValues(originalEvent, updatedEvent, changeType);
+          oldValue = changeValues.oldValue;
+          newValue = changeValues.newValue;
+        }
+        
+        await this.eventNotificationService.publishEventChange({
+          event: updatedEvent,
+          changeType: changeType,
+          oldValue,
+          newValue,
+        });
+      } catch (error) {
+        this.logger.error(`Error publishing event modification for event ${id}:`, error);
+      }
+    }
+
     return updatedEvent;
   }
 
   async toggleActive(id: string): Promise<Event> {
+    const originalEvent = await this.repository.findById(id);
+    if (!originalEvent) {
+      throw new NotFoundException('Event not found');
+    }
+
     const event = await this.repository.toggleActive(id);
     if (!event) {
       throw new NotFoundException('Event not found');
     }
+
+    // Detectar si cambió el estado activo
+    const changeType = originalEvent.isActive !== event.isActive
+      ? (event.isActive ? 'activation' : 'cancellation')
+      : null;
+
+    // Publicar al tópico si hay cambio de estado
+    if (changeType) {
+      try {
+        const { oldValue, newValue } = await this.getChangeValues(originalEvent, event, changeType);
+        await this.eventNotificationService.publishEventChange({
+          event: event,
+          changeType: changeType,
+          oldValue,
+          newValue,
+        });
+      } catch (error) {
+        this.logger.error(`Error publishing event status change for event ${id}:`, error);
+      }
+    }
+
     return event;
   }
 
@@ -244,6 +302,141 @@ export class EventsService {
     
     if (!result) {
       throw new BadRequestException(`Failed to update ticket count for event ${eventId}, type ${ticketType}`);
+    }
+  }
+
+  private detectCriticalChange(originalEvent: any, updateData: any): 'location_change' | 'date_change' | 'time_change' | 'date_time_change' | null {
+    // Cambio de lugar cultural
+    if (updateData.culturalPlaceId && updateData.culturalPlaceId.toString() !== originalEvent.culturalPlaceId.toString()) {
+      return 'location_change';
+    }
+
+    // Verificar cambios en fecha y hora
+    const dateChanged = updateData.date && new Date(updateData.date).getTime() !== new Date(originalEvent.date).getTime();
+    const timeChanged = updateData.time && updateData.time !== originalEvent.time;
+
+    // Si cambian ambos, es un cambio de fecha y hora
+    if (dateChanged && timeChanged) {
+      return 'date_time_change';
+    }
+
+    // Si solo cambia la fecha
+    if (dateChanged) {
+      return 'date_change';
+    }
+
+    // Si solo cambia la hora
+    if (timeChanged) {
+      return 'time_change';
+    }
+
+    return null;
+  }
+
+  private async getChangeValues(originalEvent: any, updatedEvent: any, changeType: string): Promise<{ oldValue: any; newValue: any }> {
+    switch (changeType) {
+      case 'location_change':
+        // Usar los datos que ya tenemos disponibles
+        return {
+          oldValue: originalEvent.culturalPlaceId?.name || 'N/A',
+          newValue: updatedEvent.culturalPlaceId?.name || 'N/A',
+        };
+      
+      case 'date_change':
+        try {
+          // Intentar diferentes formatos de fecha
+          let originalDate: Date;
+          let updatedDate: Date;
+          
+          // Para originalEvent, puede que sea un string o un objeto Date
+          if (originalEvent.date instanceof Date) {
+            originalDate = originalEvent.date;
+          } else if (typeof originalEvent.date === 'string') {
+            originalDate = new Date(originalEvent.date);
+          } else {
+            originalDate = new Date(originalEvent.date?.toString() || originalEvent.date);
+          }
+          
+          // Para updatedEvent, debería ser un string ISO
+          if (updatedEvent.date instanceof Date) {
+            updatedDate = updatedEvent.date;
+          } else {
+            updatedDate = new Date(updatedEvent.date);
+          }
+          
+          return {
+            oldValue: isNaN(originalDate.getTime()) ? `Fecha inválida (${originalEvent.date})` : originalDate.toLocaleDateString('es-ES'),
+            newValue: isNaN(updatedDate.getTime()) ? `Fecha inválida (${updatedEvent.date})` : updatedDate.toLocaleDateString('es-ES'),
+          };
+        } catch (error) {
+          return {
+            oldValue: `Error al formatear fecha original: ${originalEvent.date}`,
+            newValue: `Error al formatear fecha nueva: ${updatedEvent.date}`,
+          };
+        }
+      
+      case 'date_time_change':
+        try {
+          // Formatear fecha y hora juntas
+          let originalDate: Date;
+          let updatedDate: Date;
+          
+          if (originalEvent.date instanceof Date) {
+            originalDate = originalEvent.date;
+          } else if (typeof originalEvent.date === 'string') {
+            originalDate = new Date(originalEvent.date);
+          } else {
+            originalDate = new Date(originalEvent.date?.toString() || originalEvent.date);
+          }
+          
+          if (updatedEvent.date instanceof Date) {
+            updatedDate = updatedEvent.date;
+          } else {
+            updatedDate = new Date(updatedEvent.date);
+          }
+          
+          const originalFormatted = isNaN(originalDate.getTime()) 
+            ? `Fecha inválida (${originalEvent.date})` 
+            : `${originalDate.toLocaleDateString('es-ES')} a las ${originalEvent.time}`;
+          
+          const updatedFormatted = isNaN(updatedDate.getTime()) 
+            ? `Fecha inválida (${updatedEvent.date})` 
+            : `${updatedDate.toLocaleDateString('es-ES')} a las ${updatedEvent.time}`;
+          
+          return {
+            oldValue: originalFormatted,
+            newValue: updatedFormatted,
+          };
+        } catch (error) {
+          return {
+            oldValue: `Error al formatear fecha/hora original: ${originalEvent.date} ${originalEvent.time}`,
+            newValue: `Error al formatear fecha/hora nueva: ${updatedEvent.date} ${updatedEvent.time}`,
+          };
+        }
+      
+      case 'time_change':
+        return {
+          oldValue: originalEvent.time || 'N/A',
+          newValue: updatedEvent.time || 'N/A',
+        };
+      
+      case 'activation':
+        return {
+          oldValue: originalEvent.isActive ? 'Activo' : 'Inactivo',
+          newValue: updatedEvent.isActive ? 'Activo' : 'Inactivo',
+        };
+      
+      case 'cancellation':
+        return {
+          oldValue: originalEvent.isActive ? 'Activo' : 'Inactivo',
+          newValue: updatedEvent.isActive ? 'Activo' : 'Inactivo',
+        };
+      
+      default:
+        return {
+          oldValue: 'N/A',
+          newValue: 'N/A',
+        };
     }
   }
 }

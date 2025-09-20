@@ -459,4 +459,191 @@ export class EmailService {
       </html>
     `;
   }
+
+  async sendEventModificationEmail(data: {
+    userEmail: string;
+    userName: string;
+    event: any;
+    modificationType: string;
+    oldValue: any;
+    newValue: any;
+    ticketCount: number;
+    ticketTypes: string[];
+  }): Promise<boolean> {
+    const { userEmail, userName, event, modificationType, oldValue, newValue, ticketCount, ticketTypes } = data;
+    
+    const subject = this.getModificationSubject(modificationType, event.name);
+    const html = this.generateEventModificationHTML(userName, event, modificationType, oldValue, newValue, ticketCount, ticketTypes);
+    
+    return this.sendEmail({
+      to: userEmail,
+      subject,
+      html,
+    });
+  }
+
+  async sendEventCancellationEmail(data: {
+    userEmail: string;
+    userName: string;
+    event: any;
+    ticketCount: number;
+    ticketTypes: string[];
+    cancellationReason?: string;
+  }): Promise<boolean> {
+    const { userEmail, userName, event, ticketCount, ticketTypes, cancellationReason } = data;
+    
+    const subject = `❌ Evento Cancelado - ${event.name}`;
+    const html = this.generateEventCancellationHTML(userName, event, ticketCount, ticketTypes, cancellationReason);
+    
+    return this.sendEmail({
+      to: userEmail,
+      subject,
+      html,
+    });
+  }
+
+  private getModificationSubject(modificationType: string, eventName: string): string {
+    const subjects = {
+      'date_change': `⚠️ Cambio de Fecha - ${eventName}`,
+      'time_change': `⚠️ Cambio de Hora - ${eventName}`,
+      'date_time_change': `⚠️ Cambio de Fecha y Hora - ${eventName}`,
+      'location_change': `📍 Nueva Ubicación - ${eventName}`,
+      'activation': `✅ Evento Reactivado - ${eventName}`,
+    };
+    
+    return subjects[modificationType] || `📢 Actualización - ${eventName}`;
+  }
+
+  private generateEventModificationHTML(userName: string, event: any, modificationType: string, oldValue: any, newValue: any, ticketCount: number, ticketTypes: string[]): string {
+    let modificationDetails = '';
+    
+    switch (modificationType) {
+      case 'date_change':
+        modificationDetails = `La fecha original era <strong>${oldValue}</strong> y la nueva fecha es <strong>${newValue}</strong>.`;
+        break;
+      case 'time_change':
+        modificationDetails = `La hora original era <strong>${oldValue}</strong> y la nueva hora es <strong>${newValue}</strong>.`;
+        break;
+      case 'date_time_change':
+        modificationDetails = `La fecha y hora originales eran <strong>${oldValue}</strong> y las nuevas son <strong>${newValue}</strong>.`;
+        break;
+      case 'location_change':
+        modificationDetails = `La ubicación original era <strong>${oldValue.name || oldValue}</strong> y la nueva ubicación es <strong>${newValue.name || newValue}</strong>.`;
+        break;
+      case 'activation':
+        modificationDetails = `El evento ha sido reactivado y se llevará a cabo como estaba previsto.`;
+        break;
+      default:
+        modificationDetails = `Ha habido una actualización importante en el evento.`;
+    }
+
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2c3e50; margin: 0; font-size: 28px;">🎭 Cultural Places</h1>
+            <p style="color: #7f8c8d; margin: 5px 0 0 0; font-size: 16px;">Actualización de Evento</p>
+          </div>
+          
+          <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+            <h2 style="color: #856404; margin: 0 0 15px 0; font-size: 20px;">⚠️ Cambio Importante en tu Evento</h2>
+            <p style="color: #856404; margin: 0; line-height: 1.5;">
+              Hola <strong>${userName}</strong>,<br><br>
+              Te informamos sobre una modificación importante en el evento <strong>"${event.name}"</strong> para el cual tienes ${ticketCount} entrada(s) de tipo(s) <strong>${ticketTypes.join(', ')}</strong>.
+            </p>
+          </div>
+          
+          <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+            <h3 style="color: #495057; margin: 0 0 15px 0; font-size: 18px;">📋 Detalles del Cambio</h3>
+            <p style="color: #495057; margin: 0; line-height: 1.6;">
+              ${modificationDetails}
+            </p>
+          </div>
+          
+          <div style="background-color: #e3f2fd; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+            <h3 style="color: #1976d2; margin: 0 0 15px 0; font-size: 18px;">🎫 Información de tus Entradas</h3>
+            <div style="color: #1976d2;">
+              <p style="margin: 0 0 10px 0;"><strong>Evento:</strong> ${event.name}</p>
+              <p style="margin: 0 0 10px 0;"><strong>Fecha:</strong> ${new Date(event.date).toLocaleDateString()}</p>
+              <p style="margin: 0 0 10px 0;"><strong>Hora:</strong> ${event.time}</p>
+              <p style="margin: 0 0 10px 0;"><strong>Entradas:</strong> ${ticketCount} de tipo(s) ${ticketTypes.join(', ')}</p>
+            </div>
+          </div>
+          
+          <div style="background-color: #fff3e0; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+            <h3 style="color: #f57c00; margin: 0 0 15px 0; font-size: 18px;">💡 Próximos Pasos</h3>
+            <ul style="color: #f57c00; margin: 0; padding-left: 20px;">
+              <li style="margin-bottom: 8px;">Revisa los nuevos detalles del evento en nuestra plataforma</li>
+              <li style="margin-bottom: 8px;">Si tienes alguna pregunta, no dudes en contactarnos</li>
+              <li style="margin-bottom: 8px;">Tus entradas siguen siendo válidas para el evento</li>
+            </ul>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+            <p style="color: #6c757d; margin: 0; font-size: 14px;">
+              Gracias por tu comprensión y por elegir Cultural Places.
+            </p>
+            <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 14px;">
+              <strong>El equipo de Cultural Places</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private generateEventCancellationHTML(userName: string, event: any, ticketCount: number, ticketTypes: string[], cancellationReason?: string): string {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2c3e50; margin: 0; font-size: 28px;">🎭 Cultural Places</h1>
+            <p style="color: #7f8c8d; margin: 5px 0 0 0; font-size: 16px;">Cancelación de Evento</p>
+          </div>
+          
+          <div style="background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+            <h2 style="color: #721c24; margin: 0 0 15px 0; font-size: 20px;">❌ Evento Cancelado</h2>
+            <p style="color: #721c24; margin: 0; line-height: 1.5;">
+              Hola <strong>${userName}</strong>,<br><br>
+              Lamentamos informarte que el evento <strong>"${event.name}"</strong> ha sido cancelado.
+            </p>
+          </div>
+          
+          <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+            <h3 style="color: #495057; margin: 0 0 15px 0; font-size: 18px;">📋 Detalles del Evento Cancelado</h3>
+            <div style="color: #495057;">
+              <p style="margin: 0 0 10px 0;"><strong>Evento:</strong> ${event.name}</p>
+              <p style="margin: 0 0 10px 0;"><strong>Fecha programada:</strong> ${new Date(event.date).toLocaleDateString()}</p>
+              <p style="margin: 0 0 10px 0;"><strong>Hora:</strong> ${event.time}</p>
+              <p style="margin: 0 0 10px 0;"><strong>Entradas afectadas:</strong> ${ticketCount} de tipo(s) ${ticketTypes.join(', ')}</p>
+              ${cancellationReason ? `<p style="margin: 0;"><strong>Razón:</strong> ${cancellationReason}</p>` : ''}
+            </div>
+          </div>
+          
+          <div style="background-color: #e3f2fd; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+            <h3 style="color: #1976d2; margin: 0 0 15px 0; font-size: 18px;">💰 Opciones de Reembolso</h3>
+            <p style="color: #1976d2; margin: 0; line-height: 1.6;">
+              Nos pondremos en contacto contigo en breve para informarte sobre las opciones de reembolso o reubicación disponibles.
+            </p>
+          </div>
+          
+          <div style="background-color: #fff3e0; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+            <h3 style="color: #f57c00; margin: 0 0 15px 0; font-size: 18px;">📞 Contacto</h3>
+            <p style="color: #f57c00; margin: 0; line-height: 1.6;">
+              Si tienes alguna pregunta o necesitas asistencia adicional, no dudes en contactarnos.
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+            <p style="color: #6c757d; margin: 0; font-size: 14px;">
+              Lamentamos cualquier inconveniente que esto pueda causar.
+            </p>
+            <p style="color: #6c757d; margin: 10px 0 0 0; font-size: 14px;">
+              <strong>El equipo de Cultural Places</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 }

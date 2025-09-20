@@ -6,9 +6,9 @@ import { PurchaseTicketDto } from './dto/purchase-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
 import { Ticket } from './schemas/ticket.schema';
 import { Types } from 'mongoose';
-import { EventsService } from '../events/events.service';
 import { UserService } from '../users/user/user.service';
 import { EmailService } from '../email/email.service';
+import { EventInventoryService } from '../events/event-inventory.service';
 
 @Injectable()
 export class TicketsService {
@@ -16,9 +16,9 @@ export class TicketsService {
 
   constructor(
     @Inject(TICKET_REPOSITORY) private readonly repository: TicketRepository,
-    private readonly eventsService: EventsService,
     private readonly userService: UserService,
-    private readonly emailService: EmailService
+    private readonly emailService: EmailService,
+    private readonly eventInventoryService: EventInventoryService
   ) {}
 
 
@@ -32,12 +32,12 @@ export class TicketsService {
     }
 
     // Validate event exists, is active, and not expired
-    const event = await this.eventsService.validateEventForTicketPurchase(eventId);
+    const event = await this.eventInventoryService.validateEventForTicketPurchase(eventId);
 
     // Check ticket availability
-    const isAvailable = await this.eventsService.checkTicketAvailability(eventId, ticketType, quantity);
+    const isAvailable = await this.eventInventoryService.checkTicketAvailability(eventId, ticketType, quantity);
     if (!isAvailable) {
-      const availableQuantity = await this.eventsService.getTicketAvailability(eventId, ticketType);
+      const availableQuantity = await this.eventInventoryService.getTicketAvailability(eventId, ticketType);
       throw new InsufficientTicketsException(eventId, ticketType, quantity, availableQuantity);
     }
 
@@ -65,7 +65,7 @@ export class TicketsService {
     }
 
     // Update ticket count in event
-    await this.eventsService.updateTicketCount(eventId, ticketType, quantity);
+    await this.eventInventoryService.updateTicketCount(eventId, ticketType, quantity);
 
     // Send confirmation email
     try {
@@ -258,5 +258,54 @@ export class TicketsService {
     }
   }
 
+  async getUsersWithActiveTicketsForEvent(eventId: string): Promise<Array<{
+    userId: string;
+    userEmail: string;
+    userName: string;
+    ticketCount: number;
+    ticketTypes: string[];
+  }>> {
+    try {
+      const tickets = await this.repository.findByEvent(eventId);
+      const activeTickets = tickets.filter(ticket => ticket.status === 'active');
 
+      if (activeTickets.length === 0) {
+        this.logger.log(`No hay tickets activos para el evento ${eventId}`);
+        return [];
+      }
+
+      const userTicketMap = new Map();
+      for (const ticket of activeTickets) {
+        const userId = ticket.userId.toString();
+        if (!userTicketMap.has(userId)) {
+          const user = await this.userService.findOne(userId);
+          if (!user) {
+            this.logger.warn(`Usuario no encontrado para ID: ${userId}`);
+            continue;
+          }
+          userTicketMap.set(userId, {
+            userId,
+            userEmail: user.email,
+            userName: user.name,
+            ticketCount: 0,
+            ticketTypes: new Set()
+          });
+        }
+        const userData = userTicketMap.get(userId);
+        userData.ticketCount++;
+        userData.ticketTypes.add(ticket.ticketType);
+      }
+
+      const result = Array.from(userTicketMap.values()).map(userData => ({
+        ...userData,
+        ticketTypes: Array.from(userData.ticketTypes)
+      }));
+
+      this.logger.log(`Encontrados ${result.length} usuarios con tickets activos para el evento ${eventId}`);
+      return result;
+    } catch (error) {
+      this.logger.error('Error obteniendo usuarios con tickets activos:', error);
+      return [];
+    }
+  }
 }

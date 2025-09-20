@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { EventsService } from '../events.service';
 import { EVENT_REPOSITORY } from '../interfaces/event.repository.token';
+import { EventNotificationService } from '../../notifications/event-notification.service';
 
 describe('EventsService Ticket Count Tests', () => {
   let service: EventsService;
@@ -52,6 +53,12 @@ describe('EventsService Ticket Count Tests', () => {
         {
           provide: EVENT_REPOSITORY,
           useValue: mockEventRepository,
+        },
+        {
+          provide: EventNotificationService,
+          useValue: {
+            publishEventChange: jest.fn(),
+          },
         },
       ],
     }).compile();
