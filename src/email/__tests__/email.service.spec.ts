@@ -384,4 +384,19 @@ describe('EmailService', () => {
       expect(subject).toBe('📢 Actualización - Test Event');
     });
   });
+
+  describe('generateEventModificationHTML', () => {
+    it('should return default message for unknown modification type', () => {
+      const html = (service as any).generateEventModificationHTML(
+        'Test User',
+        { name: 'Test Event' },
+        'unknown_type',
+        'oldValue',
+        'newValue',
+        1,
+        ['general']
+      );
+      expect(html).toContain('Ha habido una actualización importante en el evento.');
+    });
+  });
 });

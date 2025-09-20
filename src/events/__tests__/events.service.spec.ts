@@ -10,6 +10,7 @@ import { EventNotificationService } from '../../notifications/event-notification
 describe('EventsService', () => {
   let service: EventsService;
   let repository: jest.Mocked<EventRepository>;
+  let eventNotificationService: jest.Mocked<EventNotificationService>;
 
   const mockEvent: any = {
     _id: '507f1f77bcf86cd799439011',
@@ -64,6 +65,7 @@ describe('EventsService', () => {
     update: jest.fn(),
     delete: jest.fn(),
     toggleActive: jest.fn(),
+    updateTicketCount: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -85,6 +87,7 @@ describe('EventsService', () => {
 
     service = module.get<EventsService>(EventsService);
     repository = module.get(EVENT_REPOSITORY);
+    eventNotificationService = module.get(EventNotificationService);
   });
 
   afterEach(() => {
@@ -301,11 +304,97 @@ describe('EventsService', () => {
       await expect(service.update('507f1f77bcf86cd799439011', invalidTicketDto)).rejects.toThrow(BadRequestException);
       expect(repository.update).not.toHaveBeenCalled();
     });
+
+    it('should publish event change notification for location change', async () => {
+      const originalEvent = {
+        ...mockEvent,
+        culturalPlaceId: { _id: '507f1f77bcf86cd799439012', name: 'Old Place' }
+      };
+      const updatedEvent = {
+        ...mockEvent,
+        culturalPlaceId: { _id: '507f1f77bcf86cd799439013', name: 'New Place' }
+      };
+      
+      repository.findById.mockResolvedValueOnce(originalEvent);
+      repository.findById.mockResolvedValueOnce(updatedEvent);
+      repository.update.mockResolvedValue(updatedEvent);
+      eventNotificationService.publishEventChange.mockResolvedValue(undefined);
+
+      const updateDto = { culturalPlaceId: '507f1f77bcf86cd799439013' };
+      const result = await service.update('507f1f77bcf86cd799439011', updateDto, 'location_change');
+
+      expect(result).toEqual(updatedEvent);
+      expect(eventNotificationService.publishEventChange).toHaveBeenCalledWith({
+        event: updatedEvent,
+        changeType: 'location_change',
+        oldValue: 'Old Place',
+        newValue: 'New Place',
+      });
+    });
+
+    it('should handle error when publishing event change notification', async () => {
+      const originalEvent = {
+        ...mockEvent,
+        culturalPlaceId: { _id: '507f1f77bcf86cd799439012', name: 'Old Place' }
+      };
+      const updatedEvent = {
+        ...mockEvent,
+        culturalPlaceId: { _id: '507f1f77bcf86cd799439013', name: 'New Place' }
+      };
+      
+      repository.findById.mockResolvedValueOnce(originalEvent);
+      repository.findById.mockResolvedValueOnce(updatedEvent);
+      repository.update.mockResolvedValue(updatedEvent);
+      eventNotificationService.publishEventChange.mockRejectedValue(new Error('Notification failed'));
+
+      const updateDto = { culturalPlaceId: '507f1f77bcf86cd799439013' };
+      const result = await service.update('507f1f77bcf86cd799439011', updateDto, 'location_change');
+
+      expect(result).toEqual(updatedEvent);
+      // Should not throw error, just log it
+    });
+
+    it('should publish event change notification for other change types', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 30);
+      const futureDateStr = futureDate.toISOString().split('T')[0];
+      
+      const futureDate2 = new Date();
+      futureDate2.setDate(futureDate2.getDate() + 31);
+      const futureDate2Str = futureDate2.toISOString().split('T')[0];
+      
+      const originalEvent = { ...mockEvent, date: futureDateStr };
+      const updatedEvent = { ...mockEvent, date: futureDate2Str };
+      
+      repository.findById.mockResolvedValue(originalEvent);
+      repository.update.mockResolvedValue(updatedEvent);
+      eventNotificationService.publishEventChange.mockResolvedValue(undefined);
+
+      // Mock getChangeValues method
+      const getChangeValuesSpy = jest.spyOn(service as any, 'getChangeValues')
+        .mockResolvedValue({ oldValue: '25/12/2024', newValue: '26/12/2024' });
+
+      // Use a different date to trigger the change detection
+      const updateDto = { date: futureDate2Str };
+      const result = await service.update('507f1f77bcf86cd799439011', updateDto, 'date_change');
+
+      expect(result).toEqual(updatedEvent);
+      expect(getChangeValuesSpy).toHaveBeenCalledWith(originalEvent, updatedEvent, 'date_change');
+      expect(eventNotificationService.publishEventChange).toHaveBeenCalledWith({
+        event: updatedEvent,
+        changeType: 'date_change',
+        oldValue: '25/12/2024',
+        newValue: '26/12/2024',
+      });
+
+      getChangeValuesSpy.mockRestore();
+    });
   });
 
   describe('toggleActive', () => {
     it('should toggle event active status', async () => {
       const toggledEvent = { ...mockEvent, isActive: false };
+      repository.findById.mockResolvedValue(mockEvent);
       repository.toggleActive.mockResolvedValue(toggledEvent);
 
       const result = await service.toggleActive('507f1f77bcf86cd799439011');
@@ -315,9 +404,74 @@ describe('EventsService', () => {
     });
 
     it('should throw NotFoundException if event not found', async () => {
-      repository.toggleActive.mockResolvedValue(null);
+      repository.findById.mockResolvedValue(null);
 
       await expect(service.toggleActive('invalid-id')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should publish activation notification when event becomes active', async () => {
+      const inactiveEvent = { ...mockEvent, isActive: false };
+      const activatedEvent = { ...mockEvent, isActive: true };
+      
+      repository.findById.mockResolvedValue(inactiveEvent);
+      repository.toggleActive.mockResolvedValue(activatedEvent);
+      eventNotificationService.publishEventChange.mockResolvedValue(undefined);
+
+      const result = await service.toggleActive('507f1f77bcf86cd799439011');
+
+      expect(result).toEqual(activatedEvent);
+      expect(eventNotificationService.publishEventChange).toHaveBeenCalledWith({
+        event: activatedEvent,
+        changeType: 'activation',
+        oldValue: 'Inactivo',
+        newValue: 'Activo',
+      });
+    });
+
+    it('should publish cancellation notification when event becomes inactive', async () => {
+      const activeEvent = { ...mockEvent, isActive: true };
+      const cancelledEvent = { ...mockEvent, isActive: false };
+      
+      repository.findById.mockResolvedValue(activeEvent);
+      repository.toggleActive.mockResolvedValue(cancelledEvent);
+      eventNotificationService.publishEventChange.mockResolvedValue(undefined);
+
+      const result = await service.toggleActive('507f1f77bcf86cd799439011');
+
+      expect(result).toEqual(cancelledEvent);
+      expect(eventNotificationService.publishEventChange).toHaveBeenCalledWith({
+        event: cancelledEvent,
+        changeType: 'cancellation',
+        oldValue: 'Activo',
+        newValue: 'Inactivo',
+      });
+    });
+
+    it('should not publish notification when status does not change', async () => {
+      const activeEvent = { ...mockEvent, isActive: true };
+      const sameEvent = { ...mockEvent, isActive: true };
+      
+      repository.findById.mockResolvedValue(activeEvent);
+      repository.toggleActive.mockResolvedValue(sameEvent);
+
+      const result = await service.toggleActive('507f1f77bcf86cd799439011');
+
+      expect(result).toEqual(sameEvent);
+      expect(eventNotificationService.publishEventChange).not.toHaveBeenCalled();
+    });
+
+    it('should handle error when publishing notification fails', async () => {
+      const inactiveEvent = { ...mockEvent, isActive: false };
+      const activatedEvent = { ...mockEvent, isActive: true };
+      
+      repository.findById.mockResolvedValue(inactiveEvent);
+      repository.toggleActive.mockResolvedValue(activatedEvent);
+      eventNotificationService.publishEventChange.mockRejectedValue(new Error('Notification failed'));
+
+      const result = await service.toggleActive('507f1f77bcf86cd799439011');
+
+      expect(result).toEqual(activatedEvent);
+      // Should not throw error, just log it
     });
   });
 
@@ -467,6 +621,171 @@ describe('EventsService', () => {
       const result = await service.findOne('507f1f77bcf86cd799439011');
 
       expect(result).toEqual(eventWithoutCoordinates);
+    });
+  });
+
+  describe('updateTicketCount', () => {
+    it('should update ticket count successfully', async () => {
+      repository.updateTicketCount.mockResolvedValue(true);
+
+      await service.updateTicketCount('507f1f77bcf86cd799439011', 'general', 5);
+
+      expect(repository.updateTicketCount).toHaveBeenCalledWith('507f1f77bcf86cd799439011', 'general', 5);
+    });
+
+    it('should throw BadRequestException when update fails', async () => {
+      repository.updateTicketCount.mockResolvedValue(false);
+
+      await expect(service.updateTicketCount('507f1f77bcf86cd799439011', 'general', 5))
+        .rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('detectCriticalChange', () => {
+    it('should detect location change', () => {
+      const originalEvent = { culturalPlaceId: 'old-place-id' };
+      const updateData = { culturalPlaceId: 'new-place-id' };
+
+      const result = (service as any).detectCriticalChange(originalEvent, updateData);
+
+      expect(result).toBe('location_change');
+    });
+
+    it('should detect date change', () => {
+      const originalEvent = { date: '2024-12-25' };
+      const updateData = { date: '2024-12-26' };
+
+      const result = (service as any).detectCriticalChange(originalEvent, updateData);
+
+      expect(result).toBe('date_change');
+    });
+
+    it('should detect time change', () => {
+      const originalEvent = { time: '20:00' };
+      const updateData = { time: '21:00' };
+
+      const result = (service as any).detectCriticalChange(originalEvent, updateData);
+
+      expect(result).toBe('time_change');
+    });
+
+    it('should detect date_time_change when both date and time change', () => {
+      const originalEvent = { date: '2024-12-25', time: '20:00' };
+      const updateData = { date: '2024-12-26', time: '21:00' };
+
+      const result = (service as any).detectCriticalChange(originalEvent, updateData);
+
+      expect(result).toBe('date_time_change');
+    });
+
+    it('should return null when no critical change detected', () => {
+      const originalEvent = { name: 'Event', description: 'Description' };
+      const updateData = { name: 'Updated Event' };
+
+      const result = (service as any).detectCriticalChange(originalEvent, updateData);
+
+      expect(result).toBe(null);
+    });
+  });
+
+  describe('getChangeValues', () => {
+    it('should return location change values', async () => {
+      const originalEvent = { culturalPlaceId: { name: 'Old Place' } };
+      const updatedEvent = { culturalPlaceId: { name: 'New Place' } };
+
+      const result = await (service as any).getChangeValues(originalEvent, updatedEvent, 'location_change');
+
+      expect(result).toEqual({
+        oldValue: 'Old Place',
+        newValue: 'New Place',
+      });
+    });
+
+    it('should return N/A for location change when names are not available', async () => {
+      const originalEvent = { culturalPlaceId: {} };
+      const updatedEvent = { culturalPlaceId: {} };
+
+      const result = await (service as any).getChangeValues(originalEvent, updatedEvent, 'location_change');
+
+      expect(result).toEqual({
+        oldValue: 'N/A',
+        newValue: 'N/A',
+      });
+    });
+
+    it('should return formatted date change values', async () => {
+      const originalEvent = { date: new Date('2024-12-25T00:00:00.000Z') };
+      const updatedEvent = { date: new Date('2024-12-26T00:00:00.000Z') };
+
+      const result = await (service as any).getChangeValues(originalEvent, updatedEvent, 'date_change');
+
+      expect(result.oldValue).toMatch(/\d{2}\/\d{2}\/\d{4}/);
+      expect(result.newValue).toMatch(/\d{2}\/\d{2}\/\d{4}/);
+      expect(result.oldValue).not.toBe(result.newValue);
+    });
+
+    it('should handle date change with string dates', async () => {
+      const originalEvent = { date: '2024-12-25T00:00:00.000Z' };
+      const updatedEvent = { date: '2024-12-26T00:00:00.000Z' };
+
+      const result = await (service as any).getChangeValues(originalEvent, updatedEvent, 'date_change');
+
+      expect(result.oldValue).toMatch(/\d{2}\/\d{2}\/\d{4}/);
+      expect(result.newValue).toMatch(/\d{2}\/\d{2}\/\d{4}/);
+      expect(result.oldValue).not.toBe(result.newValue);
+    });
+
+    it('should handle invalid dates in date change', async () => {
+      const originalEvent = { date: 'invalid-date' };
+      const updatedEvent = { date: '2024-12-26T00:00:00.000Z' };
+
+      const result = await (service as any).getChangeValues(originalEvent, updatedEvent, 'date_change');
+
+      expect(result.oldValue).toContain('Fecha inválida');
+      expect(result.newValue).toMatch(/\d{2}\/\d{2}\/\d{4}/);
+    });
+
+    it('should handle date parsing errors in date change', async () => {
+      const originalEvent = { date: { toString: () => 'invalid' } };
+      const updatedEvent = { date: '2024-12-26T00:00:00.000Z' };
+
+      const result = await (service as any).getChangeValues(originalEvent, updatedEvent, 'date_change');
+
+      expect(result.oldValue).toContain('Fecha inválida');
+      expect(result.newValue).toMatch(/\d{2}\/\d{2}\/\d{4}/);
+    });
+
+    it('should return formatted date_time_change values', async () => {
+      const originalEvent = { date: new Date('2024-12-25T00:00:00.000Z'), time: '20:00' };
+      const updatedEvent = { date: new Date('2024-12-26T00:00:00.000Z'), time: '21:00' };
+
+      const result = await (service as any).getChangeValues(originalEvent, updatedEvent, 'date_time_change');
+
+      expect(result.oldValue).toMatch(/\d{2}\/\d{2}\/\d{4} a las 20:00/);
+      expect(result.newValue).toMatch(/\d{2}\/\d{2}\/\d{4} a las 21:00/);
+      expect(result.oldValue).not.toBe(result.newValue);
+    });
+
+    it('should handle invalid dates in date_time_change', async () => {
+      const originalEvent = { date: 'invalid-date', time: '20:00' };
+      const updatedEvent = { date: '2024-12-26T00:00:00.000Z', time: '21:00' };
+
+      const result = await (service as any).getChangeValues(originalEvent, updatedEvent, 'date_time_change');
+
+      expect(result.oldValue).toContain('Fecha inválida');
+      expect(result.newValue).toMatch(/\d{2}\/\d{2}\/\d{4} a las 21:00/);
+    });
+
+    it('should return time change values', async () => {
+      const originalEvent = { time: '20:00' };
+      const updatedEvent = { time: '21:00' };
+
+      const result = await (service as any).getChangeValues(originalEvent, updatedEvent, 'time_change');
+
+      expect(result).toEqual({
+        oldValue: '20:00',
+        newValue: '21:00',
+      });
     });
   });
 });
