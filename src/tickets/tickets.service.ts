@@ -174,8 +174,25 @@ export class TicketsService {
     return this.repository.findByEvent(eventId);
   }
 
-  async findByUser(userId: string): Promise<Ticket[]> {
-    return this.repository.findByUser(userId);
+  async findByUser(userId: string, options?: any): Promise<Ticket[]> {
+    return this.repository.findByUser(userId, options);
+  }
+
+  async findByUserWithEventDetails(userId: string): Promise<any[]> {
+    const tickets = await this.repository.findByUser(userId, {
+      populate: [
+        {
+          path: 'eventId',
+          select: '_id name description date time',
+          populate: {
+            path: 'culturalPlaceId',
+            select: '_id name contact.address contact.image'
+          }
+        }
+      ]
+    });
+    
+    return tickets.map(ticket => (ticket as any).toObject ? (ticket as any).toObject() : ticket);
   }
 
   async findByEventAndUser(eventId: string, userId: string): Promise<Ticket[]> {

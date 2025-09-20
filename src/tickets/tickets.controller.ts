@@ -95,11 +95,60 @@ export class TicketsController {
   }
 
   @Get('user/:userId')
-  @ApiOperation({ summary: 'Get tickets by user ID' })
+  @ApiOperation({ 
+    summary: 'Get tickets by user ID with event details',
+    description: 'Retrieves all tickets for a specific user with complete event information including cultural place details'
+  })
   @ApiParam({ name: 'userId', description: 'User ID' })
-  @ApiResponse({ status: 200, description: 'List of tickets for user retrieved successfully' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'List of tickets for user retrieved successfully with event and cultural place details',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string', example: '68cf34f28cfcf2b57f2b377a' },
+          userId: { type: 'string', example: '68c2dd60fb172823da61eb92' },
+          ticketType: { type: 'string', example: 'general' },
+          price: { type: 'number', example: 1500 },
+          status: { type: 'string', example: 'active' },
+          isActive: { type: 'boolean', example: true },
+          createdAt: { type: 'string', format: 'date-time', example: '2025-09-20T23:12:50.392Z' },
+          updatedAt: { type: 'string', format: 'date-time', example: '2025-09-20T23:12:50.392Z' },
+          validationURL: { type: 'string', example: 'https://desarrollo-apps-2-frontend.vercel.app/ticket_id/68cf34f28cfcf2b57f2b377a/use' },
+          qrCode: { type: 'string', example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6e...' },
+          eventId: {
+            type: 'object',
+            properties: {
+              _id: { type: 'string', example: '68cb3f47a7999cce8e8e8079' },
+              name: { type: 'string', example: 'Exposición de Arte Contemporáneo' },
+              description: { type: 'string', example: 'Una muestra de artistas locales con obras contemporáneas' },
+              date: { type: 'string', format: 'date-time', example: '2025-12-25T00:00:00.000Z' },
+              time: { type: 'string', example: '19:00' },
+              availableQuantity: { type: 'number', example: 0 },
+              id: { type: 'string', example: '68cb3f47a7999cce8e8e8079' },
+              culturalPlaceId: {
+                type: 'object',
+                properties: {
+                  _id: { type: 'string', example: '68cb395bbd2545c3a5dd44a7' },
+                  name: { type: 'string', example: 'Test GeoJSON Place' },
+                  contact: {
+                    type: 'object',
+                    properties: {
+                      address: { type: 'string', example: 'Test Address' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  })
   async findByUser(@Param('userId') userId: string) {
-    return this.ticketsService.findByUser(userId);
+    return this.ticketsService.findByUserWithEventDetails(userId);
   }
 
   @Get('event/:eventId/user/:userId')

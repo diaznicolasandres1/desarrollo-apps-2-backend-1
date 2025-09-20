@@ -28,6 +28,7 @@ describe('TicketsController', () => {
     findOne: jest.fn(),
     findByEvent: jest.fn(),
     findByUser: jest.fn(),
+    findByUserWithEventDetails: jest.fn(),
     findByEventAndUser: jest.fn(),
     findByStatus: jest.fn(),
     findActiveTickets: jest.fn(),
@@ -145,14 +146,30 @@ describe('TicketsController', () => {
   });
 
   describe('findByUser', () => {
-    it('should return tickets for a user', async () => {
-      const tickets = [mockTicket];
-      service.findByUser.mockResolvedValue(tickets);
+    it('should return tickets for a user with event details', async () => {
+      const ticketsWithEventDetails = [{
+        ...mockTicket,
+        eventId: {
+          _id: '507f1f77bcf86cd799439012',
+          name: 'Test Event',
+          description: 'Test Description',
+          date: new Date(),
+          time: '19:00',
+          culturalPlaceId: {
+            _id: '507f1f77bcf86cd799439014',
+            name: 'Test Cultural Place',
+            contact: {
+              address: 'Test Address'
+            }
+          }
+        }
+      }];
+      service.findByUserWithEventDetails.mockResolvedValue(ticketsWithEventDetails);
 
       const result = await controller.findByUser('507f1f77bcf86cd799439013');
 
-      expect(result).toEqual(tickets);
-      expect(service.findByUser).toHaveBeenCalledWith('507f1f77bcf86cd799439013');
+      expect(result).toEqual(ticketsWithEventDetails);
+      expect(service.findByUserWithEventDetails).toHaveBeenCalledWith('507f1f77bcf86cd799439013');
     });
   });
 
