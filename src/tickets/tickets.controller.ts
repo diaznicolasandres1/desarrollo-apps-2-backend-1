@@ -25,9 +25,36 @@ export class TicketsController {
 
   @Post('purchase')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Purchase multiple tickets for different events and types' })
-  @ApiResponse({ status: 201, description: 'Tickets purchased successfully' })
-  @ApiResponse({ status: 400, description: 'Bad request - validation error' })
+  @ApiOperation({ 
+    summary: 'Purchase multiple tickets for different events and types',
+    description: 'Purchase multiple tickets of different types in a single transaction. Supports general, vip, jubilados, and niños ticket types. Maximum 10 tickets per transaction.'
+  })
+  @ApiResponse({ 
+    status: 201, 
+    description: 'Tickets purchased successfully',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string', example: '68cf25ed3435733e4a34db91' },
+          eventId: { type: 'string', example: '68cb3f47a7999cce8e8e8079' },
+          userId: { type: 'string', example: '68c2dd60fb172823da61eb92' },
+          ticketType: { type: 'string', example: 'general' },
+          price: { type: 'number', example: 1500 },
+          status: { type: 'string', example: 'active' },
+          isActive: { type: 'boolean', example: true },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+          validationURL: { type: 'string', example: 'https://desarrollo-apps-2-frontend.vercel.app/ticket_id/68cf25ed3435733e4a34db91/use' },
+          qrCode: { type: 'string', example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6e...' }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Bad request - validation error or insufficient tickets' })
+  @ApiResponse({ status: 404, description: 'Event or user not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
   async purchaseMultipleTickets(@Body() purchaseMultipleTicketsDto: PurchaseMultipleTicketsDto) {
     return this.ticketsService.purchaseMultipleTickets(purchaseMultipleTicketsDto);
   }
