@@ -71,7 +71,7 @@ export class TicketsController {
   @ApiParam({ name: 'userId', description: 'User ID' })
   @ApiResponse({ status: 200, description: 'List of tickets for user retrieved successfully' })
   async findByUser(@Param('userId') userId: string) {
-    return this.ticketsService.findByUser(userId);
+    return this.ticketsService.findByUserWithEventDetails(userId);
   }
 
   @Get('event/:eventId/user/:userId')

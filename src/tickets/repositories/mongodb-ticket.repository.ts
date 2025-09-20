@@ -52,11 +52,24 @@ export class MongoDBTicketRepository implements TicketRepository {
       .exec();
   }
 
-  async findByUser(userId: string): Promise<Ticket[]> {
-    return this.ticketModel
+  async findByUser(userId: string, options?: any): Promise<Ticket[]> {
+    const query = this.ticketModel
       .find({ userId: new Types.ObjectId(userId) })
-      .sort({ createdAt: -1 })
-      .exec();
+      .sort({ createdAt: -1 });
+
+    if (options?.populate) {
+      // Aplicar populate para eventId y culturalPlaceId anidado
+      query.populate({
+        path: 'eventId',
+        select: '_id name description date time',
+        populate: {
+          path: 'culturalPlaceId',
+          select: '_id name contact.address contact.image'
+        }
+      });
+    }
+
+    return query.exec();
   }
 
   async findByEventAndUser(eventId: string, userId: string): Promise<Ticket[]> {
