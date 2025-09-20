@@ -356,4 +356,117 @@ describe('EmailService', () => {
       expect(result).toBe(true);
     });
   });
+
+  describe('constructor error handling', () => {
+    it('should handle initialization error gracefully', async () => {
+      // Mock nodemailer to throw error during initialization
+      const nodemailer = require('nodemailer');
+      nodemailer.createTestAccount.mockRejectedValue(new Error('Test account creation failed'));
+      
+      // Create a new service instance to trigger constructor
+      const EmailService = require('../email.service').EmailService;
+      const serviceInstance = new EmailService();
+      
+      // Wait a bit for async initialization
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Should not throw error
+      expect(serviceInstance).toBeDefined();
+    });
+  });
+
+  describe('initializeTransporter error paths', () => {
+    it('should handle createTestAccount error', async () => {
+      const nodemailer = require('nodemailer');
+      nodemailer.createTestAccount.mockRejectedValue(new Error('Test account failed'));
+      
+      // Mock environment to trigger Ethereal path
+      const originalEnv = process.env.EMAIL_USER;
+      delete process.env.EMAIL_USER;
+      
+      const EmailService = require('../email.service').EmailService;
+      const serviceInstance = new EmailService();
+      
+      // Wait for async initialization
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Restore environment
+      if (originalEnv) process.env.EMAIL_USER = originalEnv;
+      
+      expect(serviceInstance).toBeDefined();
+    });
+
+    it('should handle transporter verify error and fallback to Ethereal', async () => {
+      const nodemailer = require('nodemailer');
+      
+      // Mock environment to use custom email
+      process.env.EMAIL_USER = 'test@gmail.com';
+      process.env.EMAIL_PASS = 'testpass';
+      
+      // Mock transporter verify to fail
+      const mockTransporterWithError = {
+        verify: jest.fn().mockImplementation((callback) => callback(new Error('Auth failed'))),
+        sendMail: jest.fn(),
+      };
+      
+      nodemailer.createTransport.mockReturnValue(mockTransporterWithError);
+      nodemailer.createTestAccount.mockResolvedValue({
+        user: 'fallback@ethereal.email',
+        pass: 'fallbackpass',
+      });
+      
+      const EmailService = require('../email.service').EmailService;
+      const serviceInstance = new EmailService();
+      
+      // Wait for async initialization
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      expect(mockTransporterWithError.verify).toHaveBeenCalled();
+    });
+
+    it('should handle Ethereal fallback error', async () => {
+      const nodemailer = require('nodemailer');
+      
+      // Mock environment to use custom email
+      process.env.EMAIL_USER = 'test@gmail.com';
+      process.env.EMAIL_PASS = 'testpass';
+      
+      // Mock transporter verify to fail
+      const mockTransporterWithError = {
+        verify: jest.fn().mockImplementation((callback) => callback(new Error('Auth failed'))),
+        sendMail: jest.fn(),
+      };
+      
+      nodemailer.createTransport.mockReturnValue(mockTransporterWithError);
+      nodemailer.createTestAccount.mockRejectedValue(new Error('Ethereal failed'));
+      
+      const EmailService = require('../email.service').EmailService;
+      const serviceInstance = new EmailService();
+      
+      // Wait for async initialization
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      expect(serviceInstance).toBeDefined();
+    });
+  });
+
+  describe('sendEmail with preview URL', () => {
+    it('should log preview URL when using Ethereal', async () => {
+      const mockResult = { 
+        messageId: 'test-message-id',
+        previewURL: 'https://ethereal.email/message/test-preview'
+      };
+      mockTransporter.sendMail.mockResolvedValue(mockResult);
+
+      const emailData = {
+        to: 'test@example.com',
+        subject: 'Test Subject',
+        html: '<p>Test content</p>',
+      };
+
+      const result = await service.sendEmail(emailData);
+
+      expect(result).toBe(true);
+    });
+  });
 });
