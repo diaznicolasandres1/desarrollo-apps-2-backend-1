@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, Logger } from '@nestjs/common';
 import { InsufficientTicketsException } from '../common/exceptions/insufficient-tickets.exception';
 import type { TicketRepository } from './interfaces/ticket.repository.interface';
 import { TICKET_REPOSITORY } from './interfaces/ticket.repository.token';
@@ -7,12 +7,18 @@ import { UpdateTicketDto } from './dto/update-ticket.dto';
 import { Ticket } from './schemas/ticket.schema';
 import { Types } from 'mongoose';
 import { EventsService } from '../events/events.service';
+import { UserService } from '../users/user/user.service';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class TicketsService {
+  private readonly logger = new Logger(TicketsService.name);
+
   constructor(
     @Inject(TICKET_REPOSITORY) private readonly repository: TicketRepository,
-    private readonly eventsService: EventsService
+    private readonly eventsService: EventsService,
+    private readonly userService: UserService,
+    private readonly emailService: EmailService
   ) {}
 
 
@@ -44,6 +50,7 @@ export class TicketsService {
 
     const tickets: Ticket[] = [];
 
+    // Crear tickets (el QR se genera automáticamente en el pre-save hook)
     for (let i = 0; i < quantity; i++) {
       const ticketData: Partial<Ticket> = {
         eventId: new Types.ObjectId(eventId),
@@ -59,6 +66,14 @@ export class TicketsService {
 
     // Update ticket count in event
     await this.eventsService.updateTicketCount(eventId, ticketType, quantity);
+
+    // Send confirmation email
+    try {
+      await this.sendTicketConfirmationEmail(tickets, event, userId);
+    } catch (error) {
+      this.logger.error('Error al enviar email de confirmación:', error);
+      // No lanzamos el error para no interrumpir la compra si el email falla
+    }
 
     return tickets;
   }
@@ -203,5 +218,45 @@ export class TicketsService {
 
     return stats;
   }
+
+  private async sendTicketConfirmationEmail(
+    tickets: Ticket[],
+    event: any,
+    userId: string
+  ): Promise<void> {
+    try {
+      // Obtener datos del usuario
+      const user = await this.userService.findOne(userId);
+      if (!user) {
+        this.logger.warn(`Usuario no encontrado para ID: ${userId}`);
+        return;
+      }
+
+      // Calcular el total
+      const totalAmount = tickets.reduce((sum, ticket) => sum + ticket.price, 0);
+
+      // Preparar datos para el email
+      const emailData = {
+        userEmail: user.email,
+        userName: user.name,
+        event: event,
+        tickets: tickets,
+        totalAmount: totalAmount,
+      };
+
+      // Enviar email
+      const emailSent = await this.emailService.sendTicketConfirmationEmail(emailData);
+      
+      if (emailSent) {
+        this.logger.log(`Email de confirmación enviado exitosamente a ${user.email}`);
+      } else {
+        this.logger.warn(`Error al enviar email de confirmación a ${user.email}`);
+      }
+    } catch (error) {
+      this.logger.error('Error en sendTicketConfirmationEmail:', error);
+      throw error;
+    }
+  }
+
 
 }

@@ -6,10 +6,15 @@ import { TICKET_REPOSITORY } from '../interfaces/ticket.repository.token';
 import { PurchaseTicketDto } from '../dto/purchase-ticket.dto';
 import { UpdateTicketDto } from '../dto/update-ticket.dto';
 import { EventsService } from '../../events/events.service';
+import { UserService } from '../../users/user/user.service';
+import { EmailService } from '../../email/email.service';
 
 describe('TicketsService', () => {
   let service: TicketsService;
   let repository: jest.Mocked<TicketRepository>;
+  let eventsService: jest.Mocked<EventsService>;
+  let userService: jest.Mocked<UserService>;
+  let emailService: jest.Mocked<EmailService>;
   let module: TestingModule;
 
   const mockTicket: any = {
@@ -55,6 +60,19 @@ describe('TicketsService', () => {
             checkTicketAvailability: jest.fn(),
             getTicketAvailability: jest.fn(),
             updateTicketCount: jest.fn(),
+            findOne: jest.fn(),
+          },
+        },
+        {
+          provide: UserService,
+          useValue: {
+            findOne: jest.fn(),
+          },
+        },
+        {
+          provide: EmailService,
+          useValue: {
+            sendTicketConfirmationEmail: jest.fn(),
           },
         },
       ],
@@ -62,6 +80,9 @@ describe('TicketsService', () => {
 
     service = module.get<TicketsService>(TicketsService);
     repository = module.get(TICKET_REPOSITORY);
+    eventsService = module.get(EventsService) as jest.Mocked<EventsService>;
+    userService = module.get(UserService) as jest.Mocked<UserService>;
+    emailService = module.get(EmailService) as jest.Mocked<EmailService>;
   });
 
   afterEach(() => {
@@ -491,6 +512,142 @@ describe('TicketsService', () => {
         price: 2000, // VIP price
         status: 'active',
       });
+    });
+  });
+
+  describe('sendTicketConfirmationEmail error handling', () => {
+    it('should handle email sending error gracefully in purchaseTicket', async () => {
+      const purchaseDto = {
+        eventId: '507f1f77bcf86cd799439012',
+        userId: '507f1f77bcf86cd799439013',
+        ticketType: 'general',
+        quantity: 1,
+      };
+
+      const mockEvent = {
+        _id: '507f1f77bcf86cd799439012',
+        name: 'Test Event',
+        date: new Date('2025-12-31'),
+        active: true,
+        ticketTypes: [
+          { type: 'general', price: 100, quantity: 100 },
+        ],
+      };
+
+      const mockUser = {
+        _id: '507f1f77bcf86cd799439013',
+        name: 'Test User',
+        email: 'test@example.com',
+      };
+
+      // Mock EventsService methods
+      eventsService.validateEventForTicketPurchase.mockResolvedValue(mockEvent);
+      eventsService.checkTicketAvailability.mockResolvedValue(true);
+      eventsService.getTicketAvailability.mockResolvedValue(5);
+      eventsService.updateTicketCount.mockResolvedValue(undefined);
+      
+      userService.findOne.mockResolvedValue(mockUser);
+      repository.create.mockResolvedValue(mockTicket);
+      
+      // Mock email service to throw error
+      emailService.sendTicketConfirmationEmail.mockRejectedValue(new Error('Email failed'));
+
+      const result = await service.purchaseTicket(purchaseDto);
+
+      expect(result).toEqual([mockTicket]);
+      expect(emailService.sendTicketConfirmationEmail).toHaveBeenCalled();
+    });
+
+    it('should handle user not found in sendTicketConfirmationEmail', async () => {
+      const tickets = [mockTicket];
+      const event = {
+        _id: '507f1f77bcf86cd799439012',
+        name: 'Test Event',
+      };
+      const userId = '507f1f77bcf86cd799439013';
+
+      userService.findOne.mockResolvedValue(null);
+
+      await service.sendTicketConfirmationEmail(tickets, event, userId);
+
+      expect(userService.findOne).toHaveBeenCalledWith(userId);
+    });
+
+    it('should handle successful email sending', async () => {
+      const tickets = [mockTicket];
+      const event = {
+        _id: '507f1f77bcf86cd799439012',
+        name: 'Test Event',
+      };
+      const userId = '507f1f77bcf86cd799439013';
+
+      const mockUser = {
+        _id: '507f1f77bcf86cd799439013',
+        name: 'Test User',
+        email: 'test@example.com',
+      };
+
+      userService.findOne.mockResolvedValue(mockUser);
+      emailService.sendTicketConfirmationEmail.mockResolvedValue(true);
+
+      await service.sendTicketConfirmationEmail(tickets, event, userId);
+
+      expect(emailService.sendTicketConfirmationEmail).toHaveBeenCalledWith({
+        userEmail: 'test@example.com',
+        userName: 'Test User',
+        event: event,
+        tickets: tickets,
+        totalAmount: 1000,
+      });
+    });
+
+    it('should handle email sending failure', async () => {
+      const tickets = [mockTicket];
+      const event = {
+        _id: '507f1f77bcf86cd799439012',
+        name: 'Test Event',
+      };
+      const userId = '507f1f77bcf86cd799439013';
+
+      const mockUser = {
+        _id: '507f1f77bcf86cd799439013',
+        name: 'Test User',
+        email: 'test@example.com',
+      };
+
+      userService.findOne.mockResolvedValue(mockUser);
+      emailService.sendTicketConfirmationEmail.mockResolvedValue(false);
+
+      await service.sendTicketConfirmationEmail(tickets, event, userId);
+
+      expect(emailService.sendTicketConfirmationEmail).toHaveBeenCalledWith({
+        userEmail: 'test@example.com',
+        userName: 'Test User',
+        event: event,
+        tickets: tickets,
+        totalAmount: 1000,
+      });
+    });
+
+    it('should handle error in sendTicketConfirmationEmail and rethrow', async () => {
+      const tickets = [mockTicket];
+      const event = {
+        _id: '507f1f77bcf86cd799439012',
+        name: 'Test Event',
+      };
+      const userId = '507f1f77bcf86cd799439013';
+
+      const mockUser = {
+        _id: '507f1f77bcf86cd799439013',
+        name: 'Test User',
+        email: 'test@example.com',
+      };
+
+      userService.findOne.mockResolvedValue(mockUser);
+      emailService.sendTicketConfirmationEmail.mockRejectedValue(new Error('Email service error'));
+
+      await expect(service.sendTicketConfirmationEmail(tickets, event, userId))
+        .rejects.toThrow('Email service error');
     });
   });
 });

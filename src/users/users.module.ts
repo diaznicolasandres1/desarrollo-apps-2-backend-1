@@ -18,5 +18,6 @@ import { USER_REPOSITORY } from './interfaces/user.repository.interface';
     },
   ],
   controllers: [UserController],
+  exports: [UserService],
 })
 export class UsersModule {}

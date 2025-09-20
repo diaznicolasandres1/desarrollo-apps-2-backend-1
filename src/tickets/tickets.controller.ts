@@ -18,7 +18,9 @@ import { UpdateTicketDto } from './dto/update-ticket.dto';
 @ApiTags('tickets')
 @Controller('tickets')
 export class TicketsController {
-  constructor(private readonly ticketsService: TicketsService) {}
+  constructor(
+    private readonly ticketsService: TicketsService
+  ) {}
 
   @Post('purchase')
   @HttpCode(HttpStatus.CREATED)
@@ -145,4 +147,5 @@ export class TicketsController {
   async remove(@Param('id') id: string) {
     await this.ticketsService.remove(id);
   }
+
 }

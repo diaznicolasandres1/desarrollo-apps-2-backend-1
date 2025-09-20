@@ -31,9 +31,41 @@ export class Ticket {
 
   @Prop({ default: true })
   isActive: boolean;
+
+  @Prop({ required: false })
+  qrCode?: string;
+
+  @Prop({ required: false })
+  validationURL?: string;
 }
 
 export const TicketSchema = SchemaFactory.createForClass(Ticket);
+
+// Pre-save hook para generar QR automáticamente
+TicketSchema.pre('save', async function(next) {
+  // Solo generar QR si no existe y es un documento nuevo
+  if (this.isNew && !this.qrCode) {
+    try {
+      const QRCode = require('qrcode');
+      const ticketId = this._id.toString();
+      const validationURL = `https://desarrollo-apps-2-frontend.vercel.app/ticket_id/${ticketId}/use`;
+      
+      this.validationURL = validationURL;
+      this.qrCode = await QRCode.toDataURL(validationURL, {
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+    } catch (error) {
+      console.error('Error generando QR en pre-save hook:', error);
+      // No fallar la creación del ticket si hay error con el QR
+    }
+  }
+  next();
+});
 
 // Indexes for efficient queries
 TicketSchema.index({ eventId: 1 });

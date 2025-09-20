@@ -7,6 +7,8 @@ import { EventNotFoundException } from '../../common/exceptions/event-not-found.
 import { EventInactiveException } from '../../common/exceptions/event-inactive.exception';
 import { EventExpiredException } from '../../common/exceptions/event-expired.exception';
 import { InsufficientTicketsException } from '../../common/exceptions/insufficient-tickets.exception';
+import { UserService } from '../../users/user/user.service';
+import { EmailService } from '../../email/email.service';
 
 describe('TicketsService Integration Tests', () => {
   let service: TicketsService;
@@ -92,6 +94,18 @@ describe('TicketsService Integration Tests', () => {
             checkTicketAvailability: jest.fn(),
             getTicketAvailability: jest.fn(),
             updateTicketCount: jest.fn(),
+          },
+        },
+        {
+          provide: UserService,
+          useValue: {
+            findOne: jest.fn(),
+          },
+        },
+        {
+          provide: EmailService,
+          useValue: {
+            sendTicketConfirmationEmail: jest.fn(),
           },
         },
       ],

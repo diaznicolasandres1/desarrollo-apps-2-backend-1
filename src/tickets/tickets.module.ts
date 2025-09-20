@@ -6,13 +6,17 @@ import { Ticket, TicketSchema } from './schemas/ticket.schema';
 import { TICKET_REPOSITORY } from './interfaces/ticket.repository.token';
 import { MongoDBTicketRepository } from './repositories/mongodb-ticket.repository';
 import { EventsModule } from '../events/events.module';
+import { EmailModule } from '../email/email.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Ticket.name, schema: TicketSchema }
     ]),
-    EventsModule
+    EventsModule,
+    EmailModule,
+    UsersModule
   ],
   controllers: [TicketsController],
   providers: [
