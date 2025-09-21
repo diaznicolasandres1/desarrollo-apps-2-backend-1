@@ -186,13 +186,41 @@ export class TicketsService {
           select: '_id name description date time image',
           populate: {
             path: 'culturalPlaceId',
-            select: '_id name contact.address contact.image'
+            select: '_id name contact.address image'
           }
         }
       ]
     });
     
-    return tickets.map(ticket => (ticket as any).toObject ? (ticket as any).toObject() : ticket);
+    return tickets.map(ticket => {
+      const ticketObj = (ticket as any).toObject ? (ticket as any).toObject() : ticket;
+      
+      // Transformar la estructura para que coincida con lo que espera el frontend
+      return {
+        _id: ticketObj._id,
+        eventId: {
+          _id: ticketObj.eventId._id,
+          name: ticketObj.eventId.name,
+          description: ticketObj.eventId.description,
+          date: ticketObj.eventId.date,
+          time: ticketObj.eventId.time,
+          images: ticketObj.eventId.image, 
+          culturalPlaceId: {
+            _id: ticketObj.eventId.culturalPlaceId._id,
+            name: ticketObj.eventId.culturalPlaceId.name,
+            address: ticketObj.eventId.culturalPlaceId.contact.address,
+            images: Array.isArray(ticketObj.eventId.culturalPlaceId.image) ? ticketObj.eventId.culturalPlaceId.image : [ticketObj.eventId.culturalPlaceId.image] // Convertir a array si no lo es
+          }
+        },
+        userId: ticketObj.userId,
+        ticketType: ticketObj.ticketType,
+        price: ticketObj.price,
+        status: ticketObj.status,
+        purchaseDate: ticketObj.createdAt, // Usar createdAt como purchaseDate
+        qrCode: ticketObj.qrCode,
+        isActive: ticketObj.isActive
+      };
+    });
   }
 
   async findByEventAndUser(eventId: string, userId: string): Promise<Ticket[]> {

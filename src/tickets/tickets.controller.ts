@@ -109,40 +109,41 @@ export class TicketsController {
         type: 'object',
         properties: {
           _id: { type: 'string', example: '68cf34f28cfcf2b57f2b377a' },
-          userId: { type: 'string', example: '68c2dd60fb172823da61eb92' },
-          ticketType: { type: 'string', example: 'general' },
-          price: { type: 'number', example: 1500 },
-          status: { type: 'string', example: 'active' },
-          isActive: { type: 'boolean', example: true },
-          createdAt: { type: 'string', format: 'date-time', example: '2025-09-20T23:12:50.392Z' },
-          updatedAt: { type: 'string', format: 'date-time', example: '2025-09-20T23:12:50.392Z' },
-          validationURL: { type: 'string', example: 'https://desarrollo-apps-2-frontend.vercel.app/ticket_id/68cf34f28cfcf2b57f2b377a/use' },
-          qrCode: { type: 'string', example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6e...' },
           eventId: {
             type: 'object',
             properties: {
               _id: { type: 'string', example: '68cb3f47a7999cce8e8e8079' },
-              name: { type: 'string', example: 'Exposición de Arte Contemporáneo' },
-              description: { type: 'string', example: 'Una muestra de artistas locales con obras contemporáneas' },
-              date: { type: 'string', format: 'date-time', example: '2025-12-25T00:00:00.000Z' },
-              time: { type: 'string', example: '19:00' },
-              availableQuantity: { type: 'number', example: 0 },
-              id: { type: 'string', example: '68cb3f47a7999cce8e8e8079' },
+              name: { type: 'string', example: 'Concierto de Jazz' },
+              description: { type: 'string', example: 'Descripción del evento...' },
+              date: { type: 'string', format: 'date', example: '2024-02-15' },
+              time: { type: 'string', example: '20:00' },
+              images: { 
+                type: 'array', 
+                items: { type: 'string' },
+                example: ['https://mi-backend.com/uploads/events/concierto-jazz.jpg']
+              },
               culturalPlaceId: {
                 type: 'object',
                 properties: {
-                  _id: { type: 'string', example: '68cb395bbd2545c3a5dd44a7' },
-                  name: { type: 'string', example: 'Test GeoJSON Place' },
-                  contact: {
-                    type: 'object',
-                    properties: {
-                      address: { type: 'string', example: 'Test Address' }
-                    }
+                  _id: { type: 'string', example: 'place_id_789' },
+                  name: { type: 'string', example: 'Teatro Colón' },
+                  address: { type: 'string', example: 'Cerrito 628, C1010 CABA' },
+                  images: { 
+                    type: 'array', 
+                    items: { type: 'string' },
+                    example: ['https://mi-backend.com/uploads/places/teatro-colon.jpg']
                   }
                 }
               }
             }
-          }
+          },
+          userId: { type: 'string', example: 'user_id_123' },
+          ticketType: { type: 'string', example: 'general' },
+          price: { type: 'number', example: 2500 },
+          status: { type: 'string', example: 'active' },
+          purchaseDate: { type: 'string', format: 'date-time', example: '2024-01-15T10:30:00Z' },
+          qrCode: { type: 'string', example: 'QR_CODE_STRING' },
+          isActive: { type: 'boolean', example: true }
         }
       }
     }

@@ -147,22 +147,30 @@ describe('TicketsController', () => {
 
   describe('findByUser', () => {
     it('should return tickets for a user with event details', async () => {
+      const fixedDate = new Date('2025-12-25T19:00:00.000Z');
       const ticketsWithEventDetails = [{
-        ...mockTicket,
+        _id: mockTicket._id,
         eventId: {
           _id: '507f1f77bcf86cd799439012',
           name: 'Test Event',
           description: 'Test Description',
-          date: new Date(),
+          date: '2025-12-25', // Solo la fecha YYYY-MM-DD
           time: '19:00',
+          images: ['https://example.com/event-image.jpg'], // Array de imágenes
           culturalPlaceId: {
             _id: '507f1f77bcf86cd799439014',
             name: 'Test Cultural Place',
-            contact: {
-              address: 'Test Address'
-            }
+            address: 'Test Address', // Directamente address
+            images: ['https://example.com/place-image.jpg'] // Array de imágenes
           }
-        }
+        },
+        userId: mockTicket.userId,
+        ticketType: mockTicket.ticketType,
+        price: mockTicket.price,
+        status: mockTicket.status,
+        purchaseDate: mockTicket.createdAt, // Usar createdAt como purchaseDate
+        qrCode: mockTicket.qrCode,
+        isActive: mockTicket.isActive
       }];
       service.findByUserWithEventDetails.mockResolvedValue(ticketsWithEventDetails);
 
