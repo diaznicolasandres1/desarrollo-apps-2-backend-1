@@ -263,12 +263,14 @@ describe('TicketsService', () => {
             description: 'Test Description',
             date: fixedDate,
             time: '19:00',
+            image: ['https://example.com/event-image.jpg'], // Ya es array según el schema
             culturalPlaceId: {
               _id: '507f1f77bcf86cd799439014',
               name: 'Test Cultural Place',
               contact: {
                 address: 'Test Address'
-              }
+              },
+              image: 'https://example.com/place-image.jpg'
             }
           }
         })
@@ -279,21 +281,28 @@ describe('TicketsService', () => {
       const result = await service.findByUserWithEventDetails('507f1f77bcf86cd799439013');
 
       expect(result).toEqual([{
-        ...mockTicket,
+        _id: mockTicket._id,
         eventId: {
           _id: '507f1f77bcf86cd799439012',
           name: 'Test Event',
           description: 'Test Description',
-          date: fixedDate,
+          date: fixedDate, // Objeto Date completo
           time: '19:00',
+          images: ['https://example.com/event-image.jpg'], // Ya es array según el schema
           culturalPlaceId: {
             _id: '507f1f77bcf86cd799439014',
             name: 'Test Cultural Place',
-            contact: {
-              address: 'Test Address'
-            }
+            address: 'Test Address', // Directamente address, no contact.address
+            images: ['https://example.com/place-image.jpg'] // Ya es array según el schema
           }
-        }
+        },
+        userId: mockTicket.userId,
+        ticketType: mockTicket.ticketType,
+        price: mockTicket.price,
+        status: mockTicket.status,
+        purchaseDate: mockTicket.createdAt, // Usar createdAt como purchaseDate
+        qrCode: mockTicket.qrCode,
+        isActive: mockTicket.isActive
       }]);
       expect(repository.findByUser).toHaveBeenCalledWith('507f1f77bcf86cd799439013', {
         populate: [
@@ -302,7 +311,7 @@ describe('TicketsService', () => {
             select: '_id name description date time image',
             populate: {
               path: 'culturalPlaceId',
-              select: '_id name contact.address contact.image'
+              select: '_id name contact.address image'
             }
           }
         ]
@@ -310,11 +319,24 @@ describe('TicketsService', () => {
     });
 
     it('should handle tickets without toObject method', async () => {
+      const fixedDate = new Date('2025-12-25T19:00:00.000Z');
       const mockTicketWithoutToObject = {
         ...mockTicket,
         eventId: {
           _id: '507f1f77bcf86cd799439012',
-          name: 'Test Event'
+          name: 'Test Event',
+          description: 'Test Description',
+          date: fixedDate,
+          time: '19:00',
+          image: ['https://example.com/event-image.jpg'], // Ya es array según el schema
+          culturalPlaceId: {
+            _id: '507f1f77bcf86cd799439014',
+            name: 'Test Cultural Place',
+            contact: {
+              address: 'Test Address'
+            },
+            image: 'https://example.com/place-image.jpg'
+          }
         }
       };
 
@@ -322,7 +344,30 @@ describe('TicketsService', () => {
 
       const result = await service.findByUserWithEventDetails('507f1f77bcf86cd799439013');
 
-      expect(result).toEqual([mockTicketWithoutToObject]);
+      expect(result).toEqual([{
+        _id: mockTicket._id,
+        eventId: {
+          _id: '507f1f77bcf86cd799439012',
+          name: 'Test Event',
+          description: 'Test Description',
+          date: fixedDate, // Objeto Date completo
+          time: '19:00',
+          images: ['https://example.com/event-image.jpg'], // Ya es array según el schema
+          culturalPlaceId: {
+            _id: '507f1f77bcf86cd799439014',
+            name: 'Test Cultural Place',
+            address: 'Test Address', // Directamente address, no contact.address
+            images: ['https://example.com/place-image.jpg'] // Ya es array según el schema
+          }
+        },
+        userId: mockTicket.userId,
+        ticketType: mockTicket.ticketType,
+        price: mockTicket.price,
+        status: mockTicket.status,
+        purchaseDate: mockTicket.createdAt, // Usar createdAt como purchaseDate
+        qrCode: mockTicket.qrCode,
+        isActive: mockTicket.isActive
+      }]);
       expect(repository.findByUser).toHaveBeenCalledWith('507f1f77bcf86cd799439013', {
         populate: [
           {
@@ -330,7 +375,7 @@ describe('TicketsService', () => {
             select: '_id name description date time image',
             populate: {
               path: 'culturalPlaceId',
-              select: '_id name contact.address contact.image'
+              select: '_id name contact.address image'
             }
           }
         ]
