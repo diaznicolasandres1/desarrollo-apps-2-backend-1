@@ -17,7 +17,11 @@ export class Ticket {
   @Prop({ required: true, min: 0 })
   price: number;
 
-  @Prop({ required: true, enum: ['active', 'used', 'cancelled'], default: 'active' })
+  @Prop({
+    required: true,
+    enum: ['active', 'used', 'cancelled'],
+    default: 'active',
+  })
   status: string;
 
   @Prop({ type: Date })
@@ -42,22 +46,22 @@ export class Ticket {
 export const TicketSchema = SchemaFactory.createForClass(Ticket);
 
 // Pre-save hook para generar QR automáticamente
-TicketSchema.pre('save', async function(next) {
+TicketSchema.pre('save', async function (next) {
   // Solo generar QR si no existe y es un documento nuevo
   if (this.isNew && !this.qrCode) {
     try {
       const QRCode = require('qrcode');
       const ticketId = this._id.toString();
-      const validationURL = `https://desarrollo-apps-2-frontend.vercel.app/ticket_id/${ticketId}/use`;
-      
+      const validationURL = `https://cultura.tomasschuster.com/ticket/${ticketId}/use`;
+
       this.validationURL = validationURL;
       this.qrCode = await QRCode.toDataURL(validationURL, {
         width: 200,
         margin: 2,
         color: {
           dark: '#000000',
-          light: '#FFFFFF'
-        }
+          light: '#FFFFFF',
+        },
       });
     } catch (error) {
       console.error('Error generando QR en pre-save hook:', error);
