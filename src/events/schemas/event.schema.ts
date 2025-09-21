@@ -63,6 +63,9 @@ export class Event {
     isActive: boolean;
   }>;
 
+  @Prop({ type: [String], required: true })
+  image: string[];
+
   @Prop({ default: true })
   isActive: boolean;
 }
@@ -79,7 +82,7 @@ EventSchema.index({ date: 1, isActive: 1 });
 // Virtual for available quantity
 EventSchema.virtual('availableQuantity').get(function() {
   if (!this.ticketTypes || !Array.isArray(this.ticketTypes)) {
-    return 0;
+    return null;
   }
   return this.ticketTypes.reduce((total, ticketType) => {
     return total + (ticketType.initialQuantity - ticketType.soldQuantity);
