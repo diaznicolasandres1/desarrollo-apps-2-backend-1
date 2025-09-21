@@ -61,7 +61,7 @@ export class MongoDBTicketRepository implements TicketRepository {
       // Aplicar populate para eventId y culturalPlaceId anidado
       query.populate({
         path: 'eventId',
-        select: '_id name description date time',
+        select: '_id name description date time image',
         populate: {
           path: 'culturalPlaceId',
           select: '_id name contact.address contact.image'
