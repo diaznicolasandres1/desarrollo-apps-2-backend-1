@@ -246,7 +246,7 @@ describe('MongoDBTicketRepository', () => {
       expect(mockQuery.sort).toHaveBeenCalledWith({ createdAt: -1 });
       expect(mockQuery.populate).toHaveBeenCalledWith({
         path: 'eventId',
-        select: '_id name description date time',
+        select: '_id name description date time image',
         populate: {
           path: 'culturalPlaceId',
           select: '_id name contact.address contact.image'

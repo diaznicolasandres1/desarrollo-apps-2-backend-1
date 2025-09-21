@@ -34,6 +34,7 @@ describe('EventsService', () => {
     description: 'Una muestra de artistas locales',
     date: new Date('2025-12-25'),
     time: '19:00',
+    image: ['https://example.com/event-image1.jpg', 'https://example.com/event-image2.jpg'],
     ticketTypes: [
       {
         type: 'general',
@@ -101,6 +102,7 @@ describe('EventsService', () => {
       description: 'Una muestra de artistas locales',
       date: '2025-12-25',
       time: '19:00',
+      image: ['https://example.com/event-image1.jpg', 'https://example.com/event-image2.jpg'],
       ticketTypes: [
         {
           type: 'general',

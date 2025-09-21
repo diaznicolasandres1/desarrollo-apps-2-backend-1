@@ -299,7 +299,7 @@ describe('TicketsService', () => {
         populate: [
           {
             path: 'eventId',
-            select: '_id name description date time',
+            select: '_id name description date time image',
             populate: {
               path: 'culturalPlaceId',
               select: '_id name contact.address contact.image'
@@ -327,7 +327,7 @@ describe('TicketsService', () => {
         populate: [
           {
             path: 'eventId',
-            select: '_id name description date time',
+            select: '_id name description date time image',
             populate: {
               path: 'culturalPlaceId',
               select: '_id name contact.address contact.image'
