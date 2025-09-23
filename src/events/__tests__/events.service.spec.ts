@@ -5,6 +5,7 @@ import type { EventRepository } from '../interfaces/event.repository.interface';
 import { EVENT_REPOSITORY } from '../interfaces/event.repository.token';
 import { CreateEventDto } from '../dto/create-event.dto';
 import { UpdateEventDto } from '../dto/update-event.dto';
+import { PutEventDto } from '../dto/put-event.dto';
 import { EventNotificationService } from '../../notifications/event-notification.service';
 
 describe('EventsService', () => {
@@ -264,41 +265,63 @@ describe('EventsService', () => {
   });
 
   describe('update', () => {
-    const updateEventDto: UpdateEventDto = {
-      name: 'Exposición Actualizada',
-      description: 'Descripción actualizada',
+    const putEventDto: PutEventDto = {
+      name: 'Taller de Pinturas',
+      description: 'Taller de técnicas de pintura moderna',
+      date: '2025-11-20',
+      time: '14:00',
+      image: ['https://example.com/event-image1.jpg'],
+      isActive: true,
+      ticketTypes: [
+        {
+          type: 'general',
+          price: 800,
+          initialQuantity: 25,
+          soldQuantity: 1
+        }
+      ]
     };
 
     it('should update an event successfully', async () => {
-      const updatedEvent = { ...mockEvent, ...updateEventDto };
+      const updatedEvent = { ...mockEvent, ...putEventDto };
       repository.findById.mockResolvedValue(mockEvent);
       repository.update.mockResolvedValue(updatedEvent);
 
-      const result = await service.update('507f1f77bcf86cd799439011', updateEventDto);
+      const result = await service.update('507f1f77bcf86cd799439011', putEventDto);
 
       expect(result).toEqual(updatedEvent);
-      expect(repository.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateEventDto);
+      expect(repository.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', expect.objectContaining({
+        name: putEventDto.name,
+        description: putEventDto.description,
+        date: expect.any(Date),
+        time: putEventDto.time,
+        isActive: putEventDto.isActive,
+        ticketTypes: putEventDto.ticketTypes,
+        culturalPlaceId: mockEvent.culturalPlaceId,
+        image: putEventDto.image
+      }));
     });
 
     it('should throw NotFoundException if event not found', async () => {
       repository.findById.mockResolvedValue(null);
 
-      await expect(service.update('invalid-id', updateEventDto)).rejects.toThrow(NotFoundException);
+      await expect(service.update('invalid-id', putEventDto)).rejects.toThrow(NotFoundException);
       expect(repository.update).not.toHaveBeenCalled();
     });
 
-    it('should validate date if provided', async () => {
-      const pastDateDto = { date: '2020-01-01' };
+    it('should validate date', async () => {
+      const pastDateDto = { ...putEventDto, date: '2020-01-01' };
       repository.findById.mockResolvedValue(mockEvent);
 
       await expect(service.update('507f1f77bcf86cd799439011', pastDateDto)).rejects.toThrow(BadRequestException);
       expect(repository.update).not.toHaveBeenCalled();
     });
 
-    it('should validate ticket types if provided', async () => {
+    it('should validate ticket types with PUT validations', async () => {
       const invalidTicketDto = {
+        ...putEventDto,
         ticketTypes: [
-          { type: 'invalid', price: 1000, initialQuantity: 100 },
+          { type: 'general', price: 1000, initialQuantity: 10, soldQuantity: 15 }, // soldQuantity > initialQuantity
         ],
       };
       repository.findById.mockResolvedValue(mockEvent);
@@ -307,31 +330,30 @@ describe('EventsService', () => {
       expect(repository.update).not.toHaveBeenCalled();
     });
 
-    it('should publish event change notification for location change', async () => {
-      const originalEvent = {
-        ...mockEvent,
-        culturalPlaceId: { _id: '507f1f77bcf86cd799439012', name: 'Old Place' }
+    it('should validate duplicate ticket types', async () => {
+      const duplicateTicketDto = {
+        ...putEventDto,
+        ticketTypes: [
+          { type: 'general', price: 1000, initialQuantity: 10, soldQuantity: 5 },
+          { type: 'general', price: 1500, initialQuantity: 20, soldQuantity: 10 }, // Duplicate type
+        ],
       };
-      const updatedEvent = {
-        ...mockEvent,
-        culturalPlaceId: { _id: '507f1f77bcf86cd799439013', name: 'New Place' }
-      };
-      
-      repository.findById.mockResolvedValueOnce(originalEvent);
-      repository.findById.mockResolvedValueOnce(updatedEvent);
+      repository.findById.mockResolvedValue(mockEvent);
+
+      await expect(service.update('507f1f77bcf86cd799439011', duplicateTicketDto)).rejects.toThrow(BadRequestException);
+      expect(repository.update).not.toHaveBeenCalled();
+    });
+
+    it('should preserve culturalPlaceId from original event', async () => {
+      const updatedEvent = { ...mockEvent, ...putEventDto };
+      repository.findById.mockResolvedValue(mockEvent);
       repository.update.mockResolvedValue(updatedEvent);
-      eventNotificationService.publishEventChange.mockResolvedValue(undefined);
 
-      const updateDto = { culturalPlaceId: '507f1f77bcf86cd799439013' };
-      const result = await service.update('507f1f77bcf86cd799439011', updateDto, 'location_change');
+      await service.update('507f1f77bcf86cd799439011', putEventDto);
 
-      expect(result).toEqual(updatedEvent);
-      expect(eventNotificationService.publishEventChange).toHaveBeenCalledWith({
-        event: updatedEvent,
-        changeType: 'location_change',
-        oldValue: 'Old Place',
-        newValue: 'New Place',
-      });
+      expect(repository.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', expect.objectContaining({
+        culturalPlaceId: mockEvent.culturalPlaceId
+      }));
     });
 
     it('should handle error when publishing event change notification', async () => {
@@ -341,7 +363,14 @@ describe('EventsService', () => {
       };
       const updatedEvent = {
         ...mockEvent,
-        culturalPlaceId: { _id: '507f1f77bcf86cd799439013', name: 'New Place' }
+        culturalPlaceId: { _id: '507f1f77bcf86cd799439013', name: 'New Place' },
+        name: putEventDto.name,
+        description: putEventDto.description,
+        date: new Date(putEventDto.date),
+        time: putEventDto.time,
+        image: putEventDto.image,
+        isActive: putEventDto.isActive,
+        ticketTypes: putEventDto.ticketTypes,
       };
       
       repository.findById.mockResolvedValueOnce(originalEvent);
@@ -349,14 +378,13 @@ describe('EventsService', () => {
       repository.update.mockResolvedValue(updatedEvent);
       eventNotificationService.publishEventChange.mockRejectedValue(new Error('Notification failed'));
 
-      const updateDto = { culturalPlaceId: '507f1f77bcf86cd799439013' };
-      const result = await service.update('507f1f77bcf86cd799439011', updateDto, 'location_change');
+      const result = await service.update('507f1f77bcf86cd799439011', putEventDto);
 
       expect(result).toEqual(updatedEvent);
       // Should not throw error, just log it
     });
 
-    it('should publish event change notification for other change types', async () => {
+    it('should publish event change notification for critical changes', async () => {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 30);
       const futureDateStr = futureDate.toISOString().split('T')[0];
@@ -365,8 +393,23 @@ describe('EventsService', () => {
       futureDate2.setDate(futureDate2.getDate() + 31);
       const futureDate2Str = futureDate2.toISOString().split('T')[0];
       
-      const originalEvent = { ...mockEvent, date: futureDateStr };
-      const updatedEvent = { ...mockEvent, date: futureDate2Str };
+      const originalEvent = { 
+        ...mockEvent, 
+        date: futureDateStr,
+        time: '19:00' // Keep original time to trigger date_time_change
+      };
+      const updatedEvent = { 
+        ...mockEvent, 
+        date: futureDate2Str,
+        time: '14:00', // Different time to trigger date_time_change
+        name: putEventDto.name,
+        description: putEventDto.description,
+        image: putEventDto.image,
+        isActive: putEventDto.isActive,
+        ticketTypes: putEventDto.ticketTypes,
+      };
+      
+      const putEventDtoWithNewDate = { ...putEventDto, date: futureDate2Str };
       
       repository.findById.mockResolvedValue(originalEvent);
       repository.update.mockResolvedValue(updatedEvent);
@@ -376,12 +419,10 @@ describe('EventsService', () => {
       const getChangeValuesSpy = jest.spyOn(service as any, 'getChangeValues')
         .mockResolvedValue({ oldValue: '25/12/2024', newValue: '26/12/2024' });
 
-      // Use a different date to trigger the change detection
-      const updateDto = { date: futureDate2Str };
-      const result = await service.update('507f1f77bcf86cd799439011', updateDto, 'date_change');
+      const result = await service.update('507f1f77bcf86cd799439011', putEventDtoWithNewDate);
 
       expect(result).toEqual(updatedEvent);
-      expect(getChangeValuesSpy).toHaveBeenCalledWith(originalEvent, updatedEvent, 'date_change');
+      expect(getChangeValuesSpy).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), 'date_change');
       expect(eventNotificationService.publishEventChange).toHaveBeenCalledWith({
         event: updatedEvent,
         changeType: 'date_change',
@@ -391,6 +432,7 @@ describe('EventsService', () => {
 
       getChangeValuesSpy.mockRestore();
     });
+
   });
 
   describe('toggleActive', () => {
