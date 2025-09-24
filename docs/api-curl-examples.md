@@ -152,16 +152,34 @@ curl -X POST "https://desarrollo-apps-2-backend.onrender.com/api/v1/events" \
   }'
 ```
 
-### Actualizar evento
+### Actualizar evento completamente
 ```bash
-curl -X PATCH "https://desarrollo-apps-2-backend.onrender.com/api/v1/events/68b8d2e612a45cdbc2ec987e" \
+curl -X PUT "https://desarrollo-apps-2-backend.onrender.com/api/v1/events/68b8d2e612a45cdbc2ec987e" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Concierto de Jazz - Edición Especial",
     "description": "Una noche mágica de jazz con artistas locales - Edición especial con invitados internacionales",
-    "time": "21:00"
+    "date": "2025-02-15",
+    "time": "21:00",
+    "isActive": true,
+    "ticketTypes": [
+      {
+        "type": "general",
+        "price": 1800,
+        "initialQuantity": 100,
+        "soldQuantity": 25
+      },
+      {
+        "type": "vip",
+        "price": 3000,
+        "initialQuantity": 20,
+        "soldQuantity": 5
+      }
+    ]
   }'
 ```
+
+**Nota:** El PUT actualiza únicamente los campos: `name`, `description`, `date`, `time`, `isActive` y `ticketTypes`. Los campos `image`, `culturalPlaceId` y otros se preservan del evento original.
 
 ### Desactivar evento
 ```bash

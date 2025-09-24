@@ -270,7 +270,6 @@ describe('EventsService', () => {
       description: 'Taller de técnicas de pintura moderna',
       date: '2025-11-20',
       time: '14:00',
-      image: ['https://example.com/event-image1.jpg'],
       isActive: true,
       ticketTypes: [
         {
@@ -296,9 +295,8 @@ describe('EventsService', () => {
         date: expect.any(Date),
         time: putEventDto.time,
         isActive: putEventDto.isActive,
-        ticketTypes: putEventDto.ticketTypes,
-        culturalPlaceId: mockEvent.culturalPlaceId,
-        image: putEventDto.image
+        ticketTypes: putEventDto.ticketTypes
+        // NO debe incluir culturalPlaceId ni image para preservarlos del evento original
       }));
     });
 
@@ -344,15 +342,15 @@ describe('EventsService', () => {
       expect(repository.update).not.toHaveBeenCalled();
     });
 
-    it('should preserve culturalPlaceId from original event', async () => {
+    it('should NOT include culturalPlaceId in update data to preserve original', async () => {
       const updatedEvent = { ...mockEvent, ...putEventDto };
       repository.findById.mockResolvedValue(mockEvent);
       repository.update.mockResolvedValue(updatedEvent);
 
       await service.update('507f1f77bcf86cd799439011', putEventDto);
 
-      expect(repository.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', expect.objectContaining({
-        culturalPlaceId: mockEvent.culturalPlaceId
+      expect(repository.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', expect.not.objectContaining({
+        culturalPlaceId: expect.anything()
       }));
     });
 
@@ -361,17 +359,16 @@ describe('EventsService', () => {
         ...mockEvent,
         culturalPlaceId: { _id: '507f1f77bcf86cd799439012', name: 'Old Place' }
       };
-      const updatedEvent = {
-        ...mockEvent,
-        culturalPlaceId: { _id: '507f1f77bcf86cd799439013', name: 'New Place' },
-        name: putEventDto.name,
-        description: putEventDto.description,
-        date: new Date(putEventDto.date),
-        time: putEventDto.time,
-        image: putEventDto.image,
-        isActive: putEventDto.isActive,
-        ticketTypes: putEventDto.ticketTypes,
-      };
+          const updatedEvent = {
+            ...mockEvent,
+            culturalPlaceId: { _id: '507f1f77bcf86cd799439013', name: 'New Place' },
+            name: putEventDto.name,
+            description: putEventDto.description,
+            date: new Date(putEventDto.date),
+            time: putEventDto.time,
+            isActive: putEventDto.isActive,
+            ticketTypes: putEventDto.ticketTypes,
+          };
       
       repository.findById.mockResolvedValueOnce(originalEvent);
       repository.findById.mockResolvedValueOnce(updatedEvent);
@@ -398,16 +395,15 @@ describe('EventsService', () => {
         date: futureDateStr,
         time: '19:00' // Keep original time to trigger date_time_change
       };
-      const updatedEvent = { 
-        ...mockEvent, 
-        date: futureDate2Str,
-        time: '14:00', // Different time to trigger date_time_change
-        name: putEventDto.name,
-        description: putEventDto.description,
-        image: putEventDto.image,
-        isActive: putEventDto.isActive,
-        ticketTypes: putEventDto.ticketTypes,
-      };
+          const updatedEvent = { 
+            ...mockEvent, 
+            date: futureDate2Str,
+            time: '14:00', // Different time to trigger date_time_change
+            name: putEventDto.name,
+            description: putEventDto.description,
+            isActive: putEventDto.isActive,
+            ticketTypes: putEventDto.ticketTypes,
+          };
       
       const putEventDtoWithNewDate = { ...putEventDto, date: futureDate2Str };
       

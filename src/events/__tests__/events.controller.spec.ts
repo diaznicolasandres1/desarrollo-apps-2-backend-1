@@ -185,7 +185,6 @@ describe('EventsController', () => {
         description: 'Taller de técnicas de pintura moderna',
         date: '2025-11-20',
         time: '14:00',
-        image: ['https://example.com/event-image1.jpg'],
         isActive: true,
         ticketTypes: [
           {

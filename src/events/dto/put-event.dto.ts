@@ -40,16 +40,6 @@ export class PutEventDto {
   @IsString()
   time: string;
 
-  @ApiProperty({
-    type: [String],
-    example: ['https://example.com/event-image1.jpg'],
-    description: 'Array of images for the event (optional)',
-    required: false
-  })
-  @IsOptional()
-  @IsArray()
-  image?: string[];
-
   @ApiProperty({ example: true, description: 'Whether the event is active' })
   @IsBoolean()
   isActive: boolean;
