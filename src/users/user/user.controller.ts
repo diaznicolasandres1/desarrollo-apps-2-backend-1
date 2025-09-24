@@ -7,9 +7,12 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { User } from '../user.schema';
 import { UserService } from './user.service';
+import { LoginDto } from '../dto/login.dto';
 
+@ApiTags('users')
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -17,6 +20,11 @@ export class UserController {
   @Post()
   async create(@Body() user: User) {
     return this.userService.create(user);
+  }
+
+  @Post('login-without-password')
+  async loginWithoutPassword(@Body() loginDto: LoginDto) {
+    return this.userService.loginOrCreate(loginDto);
   }
 
   @Get()
