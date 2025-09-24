@@ -21,12 +21,10 @@ export class TicketPurchaseItemDto {
 
   @ApiProperty({ 
     example: 'general', 
-    enum: ['general', 'vip', 'jubilados', 'niños'], 
-    description: 'Type of ticket to purchase. Available types: general, vip, jubilados, niños',
+    description: 'Type of ticket to purchase',
     type: 'string'
   })
   @IsString()
-  @IsEnum(['general', 'vip', 'jubilados', 'niños'])
   type: string;
 
   @ApiProperty({ 
