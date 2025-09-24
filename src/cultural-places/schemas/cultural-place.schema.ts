@@ -95,3 +95,32 @@ CulturalPlaceSchema.index({ 'contact.coordinates': '2dsphere' });
 CulturalPlaceSchema.index({ name: 'text' });
 CulturalPlaceSchema.index({ rating: -1 });
 CulturalPlaceSchema.index({ isActive: 1 });
+
+// Transform dates to add 4 hours for timezone compensation
+CulturalPlaceSchema.set('toJSON', { 
+  virtuals: true,
+  transform: function(doc, ret: any) {
+    // Add 4 hours to createdAt and updatedAt
+    if (ret.createdAt) {
+      ret.createdAt = new Date(new Date(ret.createdAt).getTime() + 4 * 60 * 60 * 1000);
+    }
+    if (ret.updatedAt) {
+      ret.updatedAt = new Date(new Date(ret.updatedAt).getTime() + 4 * 60 * 60 * 1000);
+    }
+    return ret;
+  }
+});
+
+CulturalPlaceSchema.set('toObject', { 
+  virtuals: true,
+  transform: function(doc, ret: any) {
+    // Add 4 hours to createdAt and updatedAt
+    if (ret.createdAt) {
+      ret.createdAt = new Date(new Date(ret.createdAt).getTime() + 4 * 60 * 60 * 1000);
+    }
+    if (ret.updatedAt) {
+      ret.updatedAt = new Date(new Date(ret.updatedAt).getTime() + 4 * 60 * 60 * 1000);
+    }
+    return ret;
+  }
+});

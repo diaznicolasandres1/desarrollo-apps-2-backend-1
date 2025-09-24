@@ -90,6 +90,37 @@ EventSchema.virtual('availableQuantity').get(function() {
   }, 0);
 });
 
-// Ensure virtuals are serialized
-EventSchema.set('toJSON', { virtuals: true });
-EventSchema.set('toObject', { virtuals: true });
+// Transform dates to add 4 hours for timezone compensation
+EventSchema.set('toJSON', { 
+  virtuals: true,
+  transform: function(doc, ret: any) {
+    // Add 4 hours to date, createdAt, and updatedAt
+    if (ret.date) {
+      ret.date = new Date(new Date(ret.date).getTime() + 4 * 60 * 60 * 1000);
+    }
+    if (ret.createdAt) {
+      ret.createdAt = new Date(new Date(ret.createdAt).getTime() + 4 * 60 * 60 * 1000);
+    }
+    if (ret.updatedAt) {
+      ret.updatedAt = new Date(new Date(ret.updatedAt).getTime() + 4 * 60 * 60 * 1000);
+    }
+    return ret;
+  }
+});
+
+EventSchema.set('toObject', { 
+  virtuals: true,
+  transform: function(doc, ret: any) {
+    // Add 4 hours to date, createdAt, and updatedAt
+    if (ret.date) {
+      ret.date = new Date(new Date(ret.date).getTime() + 4 * 60 * 60 * 1000);
+    }
+    if (ret.createdAt) {
+      ret.createdAt = new Date(new Date(ret.createdAt).getTime() + 4 * 60 * 60 * 1000);
+    }
+    if (ret.updatedAt) {
+      ret.updatedAt = new Date(new Date(ret.updatedAt).getTime() + 4 * 60 * 60 * 1000);
+    }
+    return ret;
+  }
+});
