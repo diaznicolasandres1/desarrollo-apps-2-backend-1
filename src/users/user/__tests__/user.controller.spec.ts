@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from '../user.controller';
 import { UserService } from '../user.service';
 import { User } from '../../user.schema';
+import { LoginDto } from '../../dto/login.dto';
 
 describe('UserController', () => {
   let controller: UserController;
@@ -12,6 +13,8 @@ describe('UserController', () => {
     name: 'Test User',
     email: 'test@example.com',
     password: 'hashedpassword',
+    role: 'user',
+    isGoogleUser: false,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -22,6 +25,7 @@ describe('UserController', () => {
     findOne: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
+    loginOrCreate: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -156,6 +160,46 @@ describe('UserController', () => {
 
       expect(service.remove).toHaveBeenCalledWith(userId);
       expect(result).toBeNull();
+    });
+  });
+
+  describe('loginWithoutPassword', () => {
+    it('should login existing user successfully', async () => {
+      const loginDto: LoginDto = {
+        email: 'test@example.com',
+      };
+
+      mockUserService.loginOrCreate.mockResolvedValue(mockUser);
+
+      const result = await controller.loginWithoutPassword(loginDto);
+
+      expect(service.loginOrCreate).toHaveBeenCalledWith(loginDto);
+      expect(result).toEqual(mockUser);
+    });
+
+    it('should create new user and login when user does not exist', async () => {
+      const loginDto: LoginDto = {
+        email: 'newuser@example.com',
+      };
+
+      const newUser = {
+        _id: '507f1f77bcf86cd799439012',
+        name: 'newuser',
+        email: 'newuser@example.com',
+        password: '',
+        role: 'user',
+        isGoogleUser: false,
+        createdAt: new Date(),
+      };
+
+      mockUserService.loginOrCreate.mockResolvedValue(newUser);
+
+      const result = await controller.loginWithoutPassword(loginDto);
+
+      expect(service.loginOrCreate).toHaveBeenCalledWith(loginDto);
+      expect(result).toEqual(newUser);
+      expect(result.name).toBe('newuser');
+      expect(result.role).toBe('user');
     });
   });
 });
