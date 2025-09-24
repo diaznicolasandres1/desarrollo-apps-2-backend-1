@@ -59,10 +59,10 @@
 - **Descripción:** Obtener un lugar cultural por ID
 - **Parámetros:** `id` - ID del lugar cultural
 
-### `PATCH /api/v1/cultural-places/{id}`
-- **Descripción:** Actualizar parcialmente un lugar cultural
+### `PUT /api/v1/cultural-places/{id}`
+- **Descripción:** Actualizar un lugar cultural
 - **Parámetros:** `id` - ID del lugar cultural
-- **Body:** Campos a actualizar
+- **Body:** Datos actualizados del lugar cultural
 
 ### `DELETE /api/v1/cultural-places/{id}`
 - **Descripción:** Eliminar un lugar cultural

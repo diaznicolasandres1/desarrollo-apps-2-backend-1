@@ -142,7 +142,7 @@ npm run test:watch
 | `GET` | `/api/v1/cultural-places` | Get all places with filtering |
 | `POST` | `/api/v1/cultural-places` | Create new place |
 | `GET` | `/api/v1/cultural-places/:id` | Get place by ID |
-| `PATCH` | `/api/v1/cultural-places/:id` | Update place |
+| `PUT` | `/api/v1/cultural-places/:id` | Update place |
 | `DELETE` | `/api/v1/cultural-places/:id` | Delete place |
 | `GET` | `/api/v1/cultural-places/category/:category` | Filter by category |
 | `GET` | `/api/v1/cultural-places/open/:day` | Get open places by day |

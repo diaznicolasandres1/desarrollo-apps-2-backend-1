@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Patch,
+  Put,
   Param,
   Delete,
   Query,
@@ -102,7 +103,7 @@ export class CulturalPlacesController {
     return this.culturalPlacesService.findOne(id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @ApiOperation({ summary: 'Update a cultural place' })
   @ApiParam({ name: 'id', description: 'Cultural place ID' })
   @ApiResponse({ status: 200, description: 'Cultural place updated successfully' })
