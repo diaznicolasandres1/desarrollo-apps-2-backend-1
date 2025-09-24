@@ -366,8 +366,8 @@ export class EventsService {
           }
           
           return {
-            oldValue: isNaN(originalDate.getTime()) ? `Fecha inválida (${originalEvent.date})` : originalDate.toLocaleDateString('es-ES'),
-            newValue: isNaN(updatedDate.getTime()) ? `Fecha inválida (${updatedEvent.date})` : updatedDate.toLocaleDateString('es-ES'),
+            oldValue: isNaN(originalDate.getTime()) ? `Fecha inválida (${originalEvent.date})` : new Date(originalDate.getTime() + 4 * 60 * 60 * 1000).toLocaleDateString('es-ES'),
+            newValue: isNaN(updatedDate.getTime()) ? `Fecha inválida (${updatedEvent.date})` : new Date(updatedDate.getTime() + 4 * 60 * 60 * 1000).toLocaleDateString('es-ES'),
           };
         } catch (error) {
           return {
@@ -398,11 +398,11 @@ export class EventsService {
           
           const originalFormatted = isNaN(originalDate.getTime()) 
             ? `Fecha inválida (${originalEvent.date})` 
-            : `${originalDate.toLocaleDateString('es-ES')} a las ${originalEvent.time}`;
+            : `${new Date(originalDate.getTime() + 4 * 60 * 60 * 1000).toLocaleDateString('es-ES')} a las ${originalEvent.time}`;
           
           const updatedFormatted = isNaN(updatedDate.getTime()) 
             ? `Fecha inválida (${updatedEvent.date})` 
-            : `${updatedDate.toLocaleDateString('es-ES')} a las ${updatedEvent.time}`;
+            : `${new Date(updatedDate.getTime() + 4 * 60 * 60 * 1000).toLocaleDateString('es-ES')} a las ${updatedEvent.time}`;
           
           return {
             oldValue: originalFormatted,
