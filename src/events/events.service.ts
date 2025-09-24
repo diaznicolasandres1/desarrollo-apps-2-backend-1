@@ -78,18 +78,15 @@ export class EventsService {
     // Validar tipos de tickets (obligatorio en PUT)
     this.validateTicketTypesPut(putEventDto.ticketTypes);
 
-    // Preparar datos de actualización preservando campos no editables
+    // Preparar datos de actualización - solo los campos editables
     const updateData: any = {
       name: putEventDto.name,
       description: putEventDto.description,
       date: new Date(putEventDto.date),
       time: putEventDto.time,
       isActive: putEventDto.isActive,
-      ticketTypes: putEventDto.ticketTypes,
-      // Preservar culturalPlaceId del evento original (no editable en PUT)
-      culturalPlaceId: originalEvent.culturalPlaceId,
-      // Manejar imagen opcional
-      ...(putEventDto.image && { image: putEventDto.image })
+      ticketTypes: putEventDto.ticketTypes
+      // NO incluir image, culturalPlaceId ni otros campos para preservarlos del evento original
     };
 
     const changeType = this.detectCriticalChange(originalEvent, updateData);

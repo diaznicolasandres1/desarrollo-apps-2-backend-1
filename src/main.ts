@@ -2,6 +2,9 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
+// Configurar timezone para Argentina (GMT-3)
+process.env.TZ = 'America/Argentina/Buenos_Aires';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
