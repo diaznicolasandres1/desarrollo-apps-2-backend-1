@@ -32,7 +32,7 @@ describe('MongoDBEventRepository', () => {
     description: 'Test event description',
     date: new Date('2024-12-25'),
     time: '18:00',
-    image: ['https://example.com/event-image1.jpg', 'https://example.com/event-image2.jpg'],
+    image: 'https://example.com/event-image.jpg',
     ticketTypes: [
       {
         type: 'general',

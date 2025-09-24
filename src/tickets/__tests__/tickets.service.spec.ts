@@ -263,7 +263,7 @@ describe('TicketsService', () => {
             description: 'Test Description',
             date: fixedDate,
             time: '19:00',
-            image: ['https://example.com/event-image.jpg'], // Ya es array según el schema
+            image: 'https://example.com/event-image.jpg',
             culturalPlaceId: {
               _id: '507f1f77bcf86cd799439014',
               name: 'Test Cultural Place',
@@ -288,12 +288,12 @@ describe('TicketsService', () => {
           description: 'Test Description',
           date: fixedDate, // Objeto Date completo
           time: '19:00',
-          images: ['https://example.com/event-image.jpg'], // Ya es array según el schema
+          image: 'https://example.com/event-image.jpg',
           culturalPlaceId: {
             _id: '507f1f77bcf86cd799439014',
             name: 'Test Cultural Place',
             address: 'Test Address', // Directamente address, no contact.address
-            images: ['https://example.com/place-image.jpg'] // Ya es array según el schema
+            image: 'https://example.com/place-image.jpg'
           }
         },
         userId: mockTicket.userId,
@@ -328,7 +328,7 @@ describe('TicketsService', () => {
           description: 'Test Description',
           date: fixedDate,
           time: '19:00',
-          image: ['https://example.com/event-image.jpg'], // Ya es array según el schema
+          image: 'https://example.com/event-image.jpg',
           culturalPlaceId: {
             _id: '507f1f77bcf86cd799439014',
             name: 'Test Cultural Place',
@@ -352,12 +352,12 @@ describe('TicketsService', () => {
           description: 'Test Description',
           date: fixedDate, // Objeto Date completo
           time: '19:00',
-          images: ['https://example.com/event-image.jpg'], // Ya es array según el schema
+          image: 'https://example.com/event-image.jpg',
           culturalPlaceId: {
             _id: '507f1f77bcf86cd799439014',
             name: 'Test Cultural Place',
             address: 'Test Address', // Directamente address, no contact.address
-            images: ['https://example.com/place-image.jpg'] // Ya es array según el schema
+            image: 'https://example.com/place-image.jpg'
           }
         },
         userId: mockTicket.userId,

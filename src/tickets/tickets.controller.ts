@@ -117,10 +117,9 @@ export class TicketsController {
               description: { type: 'string', example: 'Descripción del evento...' },
               date: { type: 'string', format: 'date', example: '2024-02-15' },
               time: { type: 'string', example: '20:00' },
-              images: { 
-                type: 'array', 
-                items: { type: 'string' },
-                example: ['https://mi-backend.com/uploads/events/concierto-jazz.jpg']
+              image: { 
+                type: 'string',
+                example: 'https://mi-backend.com/uploads/events/concierto-jazz.jpg'
               },
               culturalPlaceId: {
                 type: 'object',
@@ -128,10 +127,9 @@ export class TicketsController {
                   _id: { type: 'string', example: 'place_id_789' },
                   name: { type: 'string', example: 'Teatro Colón' },
                   address: { type: 'string', example: 'Cerrito 628, C1010 CABA' },
-                  images: { 
-                    type: 'array', 
-                    items: { type: 'string' },
-                    example: ['https://mi-backend.com/uploads/places/teatro-colon.jpg']
+                  image: { 
+                    type: 'string',
+                    example: 'https://mi-backend.com/uploads/places/teatro-colon.jpg'
                   }
                 }
               }
