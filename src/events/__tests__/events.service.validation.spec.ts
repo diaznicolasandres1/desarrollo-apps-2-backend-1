@@ -36,6 +36,11 @@ describe('EventsService Validation Tests', () => {
     ]
   };
 
+  const mockEventWithoutImage = {
+    ...mockEvent,
+    // Sin campo image - debe ser válido
+  };
+
   const mockExpiredEvent = {
     ...mockEvent,
     date: new Date('2020-01-01')
@@ -176,6 +181,67 @@ describe('EventsService Validation Tests', () => {
     it('should throw BadRequestException when ticket type does not exist', async () => {
       await expect(service.getTicketAvailability('507f1f77bcf86cd799439011', 'invalid')).rejects.toThrow(
         BadRequestException
+      );
+    });
+  });
+
+  describe('Event Creation with Optional Image', () => {
+    it('should create event without image field', async () => {
+      mockEventRepository.create.mockResolvedValue(mockEventWithoutImage);
+
+      const result = await service.create({
+        culturalPlaceId: '507f1f77bcf86cd799439011',
+        name: 'Test Event',
+        description: 'Test Description',
+        date: '2025-12-25',
+        time: '18:00',
+        ticketTypes: [
+          {
+            type: 'general',
+            price: 1000,
+            initialQuantity: 10
+          }
+        ]
+        // Sin campo image - debe ser válido
+      });
+
+      expect(result).toEqual(mockEventWithoutImage);
+      expect(mockEventRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Test Event',
+          description: 'Test Description',
+          // image no debe estar presente o debe ser undefined
+        })
+      );
+    });
+
+    it('should create event with image field when provided', async () => {
+      const eventWithImage = { ...mockEventWithoutImage, image: 'https://example.com/image.jpg' };
+      mockEventRepository.create.mockResolvedValue(eventWithImage);
+
+      const result = await service.create({
+        culturalPlaceId: '507f1f77bcf86cd799439011',
+        name: 'Test Event',
+        description: 'Test Description',
+        date: '2025-12-25',
+        time: '18:00',
+        image: 'https://example.com/image.jpg',
+        ticketTypes: [
+          {
+            type: 'general',
+            price: 1000,
+            initialQuantity: 10
+          }
+        ]
+      });
+
+      expect(result).toEqual(eventWithImage);
+      expect(mockEventRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Test Event',
+          description: 'Test Description',
+          image: 'https://example.com/image.jpg'
+        })
       );
     });
   });

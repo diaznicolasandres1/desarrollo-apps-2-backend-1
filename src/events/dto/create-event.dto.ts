@@ -46,10 +46,12 @@ export class CreateEventDto {
 
   @ApiProperty({ 
     example: 'https://example.com/event-image.jpg', 
-    description: 'Image URL for the event'
+    description: 'Image URL for the event',
+    required: false
   })
   @IsString()
-  image: string;
+  @IsOptional()
+  image?: string;
 
   @ApiProperty({ type: [TicketTypeDto], description: 'Available ticket types', minimum: 1 })
   @IsArray()

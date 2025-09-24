@@ -62,7 +62,7 @@ export class Event {
     isActive: boolean;
   }>;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   image: string;
 
   @Prop({ default: true })
