@@ -156,12 +156,12 @@ describe('TicketsController', () => {
           description: 'Test Description',
           date: '2025-12-25', // Solo la fecha YYYY-MM-DD
           time: '19:00',
-          images: ['https://example.com/event-image.jpg'], // Array de imágenes
+          image: 'https://example.com/event-image.jpg',
           culturalPlaceId: {
             _id: '507f1f77bcf86cd799439014',
             name: 'Test Cultural Place',
             address: 'Test Address', // Directamente address
-            images: ['https://example.com/place-image.jpg'] // Array de imágenes
+            image: 'https://example.com/place-image.jpg'
           }
         },
         userId: mockTicket.userId,

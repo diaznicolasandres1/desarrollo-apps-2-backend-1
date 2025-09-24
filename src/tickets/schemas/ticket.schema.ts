@@ -11,7 +11,7 @@ export class Ticket {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   userId: Types.ObjectId;
 
-  @Prop({ required: true, enum: ['general', 'vip', 'jubilados', 'niños'] })
+  @Prop({ required: true })
   ticketType: string;
 
   @Prop({ required: true, min: 0 })
