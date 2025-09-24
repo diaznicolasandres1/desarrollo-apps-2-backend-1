@@ -81,3 +81,44 @@ TicketSchema.index({ createdAt: 1 });
 
 // Compound index for user's event tickets
 TicketSchema.index({ userId: 1, eventId: 1 });
+
+// Transform dates to add 4 hours for timezone compensation
+TicketSchema.set('toJSON', { 
+  virtuals: true,
+  transform: function(doc, ret: any) {
+    // Add 4 hours to date fields
+    if (ret.usedAt) {
+      ret.usedAt = new Date(new Date(ret.usedAt).getTime() + 4 * 60 * 60 * 1000);
+    }
+    if (ret.cancelledAt) {
+      ret.cancelledAt = new Date(new Date(ret.cancelledAt).getTime() + 4 * 60 * 60 * 1000);
+    }
+    if (ret.createdAt) {
+      ret.createdAt = new Date(new Date(ret.createdAt).getTime() + 4 * 60 * 60 * 1000);
+    }
+    if (ret.updatedAt) {
+      ret.updatedAt = new Date(new Date(ret.updatedAt).getTime() + 4 * 60 * 60 * 1000);
+    }
+    return ret;
+  }
+});
+
+TicketSchema.set('toObject', { 
+  virtuals: true,
+  transform: function(doc, ret: any) {
+    // Add 4 hours to date fields
+    if (ret.usedAt) {
+      ret.usedAt = new Date(new Date(ret.usedAt).getTime() + 4 * 60 * 60 * 1000);
+    }
+    if (ret.cancelledAt) {
+      ret.cancelledAt = new Date(new Date(ret.cancelledAt).getTime() + 4 * 60 * 60 * 1000);
+    }
+    if (ret.createdAt) {
+      ret.createdAt = new Date(new Date(ret.createdAt).getTime() + 4 * 60 * 60 * 1000);
+    }
+    if (ret.updatedAt) {
+      ret.updatedAt = new Date(new Date(ret.updatedAt).getTime() + 4 * 60 * 60 * 1000);
+    }
+    return ret;
+  }
+});
