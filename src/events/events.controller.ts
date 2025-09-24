@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Patch,
+  Put,
   Param,
   Delete,
   Query,
@@ -14,6 +15,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { PutEventDto } from './dto/put-event.dto';
 
 @ApiTags('events')
 @Controller('events')
@@ -76,17 +78,17 @@ export class EventsController {
     return this.eventsService.findByDateRange(new Date(startDate), new Date(endDate));
   }
 
-  @Patch(':id')
-  @ApiOperation({ summary: 'Update an event' })
+  @Put(':id')
+  @ApiOperation({ summary: 'Update an event completely' })
   @ApiParam({ name: 'id', description: 'Event ID' })
   @ApiResponse({ status: 200, description: 'Event updated successfully' })
   @ApiResponse({ status: 404, description: 'Event not found' })
   @ApiResponse({ status: 400, description: 'Bad request - validation error' })
   async update(
     @Param('id') id: string,
-    @Body() updateEventDto: UpdateEventDto,
+    @Body() putEventDto: PutEventDto,
   ) {
-    return this.eventsService.update(id, updateEventDto);
+    return this.eventsService.update(id, putEventDto);
   }
 
   @Patch(':id/toggle-active')

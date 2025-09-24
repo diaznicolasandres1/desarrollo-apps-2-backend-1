@@ -375,7 +375,7 @@ export class EmailService {
                 </div>
                 <div class="event-detail-row">
                   <span class="event-detail-label">Fecha:</span>
-                  <span>${new Date(event.date).toLocaleDateString('es-ES')}</span>
+                  <span>${new Date(new Date(event.date).getTime() + 4 * 60 * 60 * 1000).toLocaleDateString('es-ES')}</span>
                 </div>
                 <div class="event-detail-row">
                   <span class="event-detail-label">Hora:</span>
@@ -564,7 +564,7 @@ export class EmailService {
             <h3 style="color: #1976d2; margin: 0 0 15px 0; font-size: 18px;">🎫 Información de tus Entradas</h3>
             <div style="color: #1976d2;">
               <p style="margin: 0 0 10px 0;"><strong>Evento:</strong> ${event.name}</p>
-              <p style="margin: 0 0 10px 0;"><strong>Fecha:</strong> ${new Date(event.date).toLocaleDateString()}</p>
+              <p style="margin: 0 0 10px 0;"><strong>Fecha:</strong> ${new Date(new Date(event.date).getTime() + 4 * 60 * 60 * 1000).toLocaleDateString()}</p>
               <p style="margin: 0 0 10px 0;"><strong>Hora:</strong> ${event.time}</p>
               <p style="margin: 0 0 10px 0;"><strong>Entradas:</strong> ${ticketCount} de tipo(s) ${ticketTypes.join(', ')}</p>
             </div>
@@ -613,7 +613,7 @@ export class EmailService {
             <h3 style="color: #495057; margin: 0 0 15px 0; font-size: 18px;">📋 Detalles del Evento Cancelado</h3>
             <div style="color: #495057;">
               <p style="margin: 0 0 10px 0;"><strong>Evento:</strong> ${event.name}</p>
-              <p style="margin: 0 0 10px 0;"><strong>Fecha programada:</strong> ${new Date(event.date).toLocaleDateString()}</p>
+              <p style="margin: 0 0 10px 0;"><strong>Fecha programada:</strong> ${new Date(new Date(event.date).getTime() + 4 * 60 * 60 * 1000).toLocaleDateString()}</p>
               <p style="margin: 0 0 10px 0;"><strong>Hora:</strong> ${event.time}</p>
               <p style="margin: 0 0 10px 0;"><strong>Entradas afectadas:</strong> ${ticketCount} de tipo(s) ${ticketTypes.join(', ')}</p>
               ${cancellationReason ? `<p style="margin: 0;"><strong>Razón:</strong> ${cancellationReason}</p>` : ''}

@@ -1054,4 +1054,64 @@ describe('TicketsService', () => {
         .rejects.toThrow('Ticket not found');
     });
   });
+
+  describe('getUsersWithActiveTicketsForEvent', () => {
+    it('should return users with active tickets for an event', async () => {
+      const eventId = '507f1f77bcf86cd799439012';
+      const mockTickets = [
+        { ...mockTicket, userId: '507f1f77bcf86cd799439013', ticketType: 'general' },
+        { ...mockTicket, userId: '507f1f77bcf86cd799439013', ticketType: 'vip' },
+        { ...mockTicket, userId: '507f1f77bcf86cd799439014', ticketType: 'general' },
+        { ...mockTicket, userId: '507f1f77bcf86cd799439015', ticketType: 'general', status: 'used' },
+      ];
+
+      repository.findByEvent.mockResolvedValue(mockTickets);
+      userService.findOne
+        .mockResolvedValueOnce({ _id: '507f1f77bcf86cd799439013', email: 'user1@test.com', name: 'User 1' })
+        .mockResolvedValueOnce({ _id: '507f1f77bcf86cd799439014', email: 'user2@test.com', name: 'User 2' });
+
+      const result = await service.getUsersWithActiveTicketsForEvent(eventId);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({
+        userId: '507f1f77bcf86cd799439013',
+        userEmail: 'user1@test.com',
+        userName: 'User 1',
+        ticketCount: 2,
+        ticketTypes: ['general', 'vip'],
+      });
+      expect(result[1]).toEqual({
+        userId: '507f1f77bcf86cd799439014',
+        userEmail: 'user2@test.com',
+        userName: 'User 2',
+        ticketCount: 1,
+        ticketTypes: ['general'],
+      });
+      expect(repository.findByEvent).toHaveBeenCalledWith(eventId);
+    });
+
+    it('should return empty array when no active tickets found', async () => {
+      const eventId = '507f1f77bcf86cd799439012';
+      const mockTickets = [
+        { ...mockTicket, status: 'used' },
+        { ...mockTicket, status: 'cancelled' },
+      ];
+
+      repository.findByEvent.mockResolvedValue(mockTickets);
+
+      const result = await service.getUsersWithActiveTicketsForEvent(eventId);
+
+      expect(result).toEqual([]);
+      expect(repository.findByEvent).toHaveBeenCalledWith(eventId);
+    });
+
+    it('should handle error and return empty array', async () => {
+      const eventId = '507f1f77bcf86cd799439012';
+      repository.findByEvent.mockRejectedValue(new Error('Database error'));
+
+      const result = await service.getUsersWithActiveTicketsForEvent(eventId);
+
+      expect(result).toEqual([]);
+    });
+  });
 });

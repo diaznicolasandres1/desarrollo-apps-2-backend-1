@@ -3,6 +3,7 @@ import { EventsController } from '../events.controller';
 import { EventsService } from '../events.service';
 import { CreateEventDto } from '../dto/create-event.dto';
 import { UpdateEventDto } from '../dto/update-event.dto';
+import { PutEventDto } from '../dto/put-event.dto';
 
 describe('EventsController', () => {
   let controller: EventsController;
@@ -178,19 +179,30 @@ describe('EventsController', () => {
   });
 
   describe('update', () => {
-    it('should update an event', async () => {
-      const updateEventDto: UpdateEventDto = {
-        name: 'Exposición Actualizada',
-        description: 'Descripción actualizada',
+    it('should update an event completely', async () => {
+      const putEventDto: PutEventDto = {
+        name: 'Taller de Pinturas',
+        description: 'Taller de técnicas de pintura moderna',
+        date: '2025-11-20',
+        time: '14:00',
+        isActive: true,
+        ticketTypes: [
+          {
+            type: 'general',
+            price: 800,
+            initialQuantity: 25,
+            soldQuantity: 1
+          }
+        ]
       };
-      const updatedEvent = { ...mockEvent, ...updateEventDto };
+      const updatedEvent = { ...mockEvent, ...putEventDto };
 
       mockService.update.mockResolvedValue(updatedEvent);
 
-      const result = await controller.update('507f1f77bcf86cd799439011', updateEventDto);
+      const result = await controller.update('507f1f77bcf86cd799439011', putEventDto);
 
       expect(result).toEqual(updatedEvent);
-      expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateEventDto);
+      expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', putEventDto);
     });
   });
 

@@ -25,3 +25,26 @@ export class User {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+// Transform dates to add 4 hours for timezone compensation
+UserSchema.set('toJSON', { 
+  virtuals: true,
+  transform: function(doc, ret: any) {
+    // Add 4 hours to createdAt
+    if (ret.createdAt) {
+      ret.createdAt = new Date(new Date(ret.createdAt).getTime() + 4 * 60 * 60 * 1000);
+    }
+    return ret;
+  }
+});
+
+UserSchema.set('toObject', { 
+  virtuals: true,
+  transform: function(doc, ret: any) {
+    // Add 4 hours to createdAt
+    if (ret.createdAt) {
+      ret.createdAt = new Date(new Date(ret.createdAt).getTime() + 4 * 60 * 60 * 1000);
+    }
+    return ret;
+  }
+});

@@ -392,7 +392,9 @@ export class TicketsService {
     ticketTypes: string[];
   }>> {
     try {
-      const tickets = await this.repository.findByEvent(eventId);
+      // Convertir eventId a ObjectId para la consulta MongoDB
+      const eventObjectId = new Types.ObjectId(eventId);
+      const tickets = await this.repository.findByEvent(eventObjectId.toString());
       const activeTickets = tickets.filter(ticket => ticket.status === 'active');
 
       if (activeTickets.length === 0) {

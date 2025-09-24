@@ -6,6 +6,7 @@ import type { EventRepository } from './interfaces/event.repository.interface';
 import { EVENT_REPOSITORY } from './interfaces/event.repository.token';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { PutEventDto } from './dto/put-event.dto';
 import { Event } from './schemas/event.schema';
 import { EventWithCulturalPlace } from './interfaces/event-with-cultural-place.interface';
 import { Types } from 'mongoose';
@@ -65,28 +66,28 @@ export class EventsService {
     return events.map(event => this.transformEventCoordinates((event as any).toObject ? (event as any).toObject() : event));
   }
 
-  async update(id: string, updateEventDto: UpdateEventDto): Promise<Event> {
+  async update(id: string, putEventDto: PutEventDto): Promise<Event> {
     const originalEvent = await this.repository.findById(id);
     if (!originalEvent) {
       throw new NotFoundException('Event not found');
     }
 
-    if (updateEventDto.date) {
-      this.validateEventDate(new Date(updateEventDto.date));
-    }
+    // Validar fecha (obligatoria en PUT)
+    this.validateEventDate(new Date(putEventDto.date));
 
-    if (updateEventDto.ticketTypes) {
-      this.validateTicketTypes(updateEventDto.ticketTypes);
-    }
+    // Validar tipos de tickets (obligatorio en PUT)
+    this.validateTicketTypesPut(putEventDto.ticketTypes);
 
+    // Preparar datos de actualización - solo los campos editables
     const updateData: any = {
-      ...updateEventDto,
-      ...(updateEventDto.date && { date: new Date(updateEventDto.date) })
+      name: putEventDto.name,
+      description: putEventDto.description,
+      date: new Date(putEventDto.date),
+      time: putEventDto.time,
+      isActive: putEventDto.isActive,
+      ticketTypes: putEventDto.ticketTypes
+      // NO incluir image, culturalPlaceId ni otros campos para preservarlos del evento original
     };
-
-    if (updateEventDto.culturalPlaceId) {
-      updateData.culturalPlaceId = new Types.ObjectId(updateEventDto.culturalPlaceId);
-    }
 
     const changeType = this.detectCriticalChange(originalEvent, updateData);
 
@@ -365,8 +366,8 @@ export class EventsService {
           }
           
           return {
-            oldValue: isNaN(originalDate.getTime()) ? `Fecha inválida (${originalEvent.date})` : originalDate.toLocaleDateString('es-ES'),
-            newValue: isNaN(updatedDate.getTime()) ? `Fecha inválida (${updatedEvent.date})` : updatedDate.toLocaleDateString('es-ES'),
+            oldValue: isNaN(originalDate.getTime()) ? `Fecha inválida (${originalEvent.date})` : new Date(originalDate.getTime() + 4 * 60 * 60 * 1000).toLocaleDateString('es-ES'),
+            newValue: isNaN(updatedDate.getTime()) ? `Fecha inválida (${updatedEvent.date})` : new Date(updatedDate.getTime() + 4 * 60 * 60 * 1000).toLocaleDateString('es-ES'),
           };
         } catch (error) {
           return {
@@ -397,11 +398,11 @@ export class EventsService {
           
           const originalFormatted = isNaN(originalDate.getTime()) 
             ? `Fecha inválida (${originalEvent.date})` 
-            : `${originalDate.toLocaleDateString('es-ES')} a las ${originalEvent.time}`;
+            : `${new Date(originalDate.getTime() + 4 * 60 * 60 * 1000).toLocaleDateString('es-ES')} a las ${originalEvent.time}`;
           
           const updatedFormatted = isNaN(updatedDate.getTime()) 
             ? `Fecha inválida (${updatedEvent.date})` 
-            : `${updatedDate.toLocaleDateString('es-ES')} a las ${updatedEvent.time}`;
+            : `${new Date(updatedDate.getTime() + 4 * 60 * 60 * 1000).toLocaleDateString('es-ES')} a las ${updatedEvent.time}`;
           
           return {
             oldValue: originalFormatted,
@@ -437,6 +438,41 @@ export class EventsService {
           oldValue: 'N/A',
           newValue: 'N/A',
         };
+    }
+  }
+
+  private validateTicketTypesPut(ticketTypes: any[]): void {
+    if (!ticketTypes || ticketTypes.length === 0) {
+      throw new BadRequestException('At least one ticket type is required');
+    }
+
+    const usedTypes = new Set();
+
+    for (const ticketType of ticketTypes) {
+      // Validar duplicados (sin restricción de tipos válidos)
+      if (usedTypes.has(ticketType.type)) {
+        throw new BadRequestException(`Duplicate ticket type: ${ticketType.type}`);
+      }
+      usedTypes.add(ticketType.type);
+
+      // Validar precios
+      if (ticketType.price < 0) {
+        throw new BadRequestException('Ticket price cannot be negative');
+      }
+
+      // Validar cantidades
+      if (ticketType.initialQuantity < 1) {
+        throw new BadRequestException('Initial quantity must be at least 1');
+      }
+
+      if (ticketType.soldQuantity < 0) {
+        throw new BadRequestException('Sold quantity cannot be negative');
+      }
+
+      // Validar integridad
+      if (ticketType.soldQuantity > ticketType.initialQuantity) {
+        throw new BadRequestException('Sold quantity cannot exceed initial quantity');
+      }
     }
   }
 }
