@@ -10,9 +10,8 @@ export class PurchaseTicketDto {
   @IsMongoId()
   userId: string;
 
-  @ApiProperty({ example: 'general', enum: ['general', 'vip', 'jubilados', 'niños'], description: 'Type of ticket to purchase' })
+  @ApiProperty({ example: 'general', description: 'Type of ticket to purchase' })
   @IsString()
-  @IsEnum(['general', 'vip', 'jubilados', 'niños'])
   ticketType: string;
 
   @ApiProperty({ example: 1, minimum: 1, description: 'Quantity of tickets to purchase', required: false })

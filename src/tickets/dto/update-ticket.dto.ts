@@ -12,10 +12,9 @@ export class UpdateTicketDto {
   @IsMongoId()
   userId?: string;
 
-  @ApiProperty({ example: 'general', enum: ['general', 'vip', 'jubilados', 'niños'], description: 'Type of ticket', required: false })
+  @ApiProperty({ example: 'general', description: 'Type of ticket', required: false })
   @IsOptional()
   @IsString()
-  @IsEnum(['general', 'vip', 'jubilados', 'niños'])
   ticketType?: string;
 
   @ApiProperty({ example: 1000, minimum: 0, description: 'Ticket price', required: false })
