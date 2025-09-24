@@ -3,7 +3,7 @@ import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class TicketTypeDto {
-  @ApiProperty({ example: 'general', enum: ['general', 'vip', 'jubilados', 'niños'], description: 'Type of ticket' })
+  @ApiProperty({ example: 'general', description: 'Type of ticket' })
   @IsString()
   type: string;
 

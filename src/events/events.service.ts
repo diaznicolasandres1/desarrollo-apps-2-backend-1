@@ -190,14 +190,9 @@ export class EventsService {
       throw new BadRequestException('At least one ticket type is required');
     }
 
-    const validTypes = ['general', 'vip', 'jubilados', 'niños'];
     const usedTypes = new Set();
 
     for (const ticketType of ticketTypes) {
-      if (!validTypes.includes(ticketType.type)) {
-        throw new BadRequestException(`Invalid ticket type: ${ticketType.type}`);
-      }
-
       if (usedTypes.has(ticketType.type)) {
         throw new BadRequestException(`Duplicate ticket type: ${ticketType.type}`);
       }

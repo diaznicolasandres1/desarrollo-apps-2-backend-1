@@ -145,20 +145,118 @@ describe('EventsService', () => {
       expect(repository.create).not.toHaveBeenCalled();
     });
 
-    it('should throw BadRequestException for invalid ticket type', async () => {
-      const invalidTicketDto = {
+    it('should create event with custom ticket type successfully', async () => {
+      const customTicketDto = {
         ...createEventDto,
         ticketTypes: [
           {
-            type: 'invalid',
-            price: 1000,
-            initialQuantity: 100,
+            type: 'premium',
+            price: 5000,
+            initialQuantity: 50,
+            isActive: true,
           },
         ],
       };
 
-      await expect(service.create(invalidTicketDto)).rejects.toThrow(BadRequestException);
-      expect(repository.create).not.toHaveBeenCalled();
+      const mockEventWithCustomTicket = {
+        ...mockEvent,
+        ticketTypes: [
+          {
+            type: 'premium',
+            price: 5000,
+            initialQuantity: 50,
+            soldQuantity: 0,
+            isActive: true,
+          },
+        ],
+      };
+
+      repository.create.mockResolvedValue(mockEventWithCustomTicket);
+
+      const result = await service.create(customTicketDto);
+
+      expect(result).toEqual(mockEventWithCustomTicket);
+      expect(repository.create).toHaveBeenCalledWith({
+        ...customTicketDto,
+        culturalPlaceId: expect.any(Object),
+        date: new Date(customTicketDto.date),
+        ticketTypes: [
+          {
+            ...customTicketDto.ticketTypes[0],
+            soldQuantity: 0,
+            isActive: true,
+          },
+        ],
+      });
+    });
+
+    it('should create event with multiple custom ticket types successfully', async () => {
+      const multipleCustomTicketsDto = {
+        ...createEventDto,
+        ticketTypes: [
+          {
+            type: 'estudiante',
+            price: 2000,
+            initialQuantity: 100,
+            isActive: true,
+          },
+          {
+            type: 'senior',
+            price: 3000,
+            initialQuantity: 30,
+            isActive: true,
+          },
+          {
+            type: 'grupo_familiar',
+            price: 8000,
+            initialQuantity: 20,
+            isActive: true,
+          },
+        ],
+      };
+
+      const mockEventWithMultipleCustomTickets = {
+        ...mockEvent,
+        ticketTypes: [
+          {
+            type: 'estudiante',
+            price: 2000,
+            initialQuantity: 100,
+            soldQuantity: 0,
+            isActive: true,
+          },
+          {
+            type: 'senior',
+            price: 3000,
+            initialQuantity: 30,
+            soldQuantity: 0,
+            isActive: true,
+          },
+          {
+            type: 'grupo_familiar',
+            price: 8000,
+            initialQuantity: 20,
+            soldQuantity: 0,
+            isActive: true,
+          },
+        ],
+      };
+
+      repository.create.mockResolvedValue(mockEventWithMultipleCustomTickets);
+
+      const result = await service.create(multipleCustomTicketsDto);
+
+      expect(result).toEqual(mockEventWithMultipleCustomTickets);
+      expect(repository.create).toHaveBeenCalledWith({
+        ...multipleCustomTicketsDto,
+        culturalPlaceId: expect.any(Object),
+        date: new Date(multipleCustomTicketsDto.date),
+        ticketTypes: multipleCustomTicketsDto.ticketTypes.map(ticket => ({
+          ...ticket,
+          soldQuantity: 0,
+          isActive: true,
+        })),
+      });
     });
 
     it('should throw BadRequestException for duplicate ticket types', async () => {

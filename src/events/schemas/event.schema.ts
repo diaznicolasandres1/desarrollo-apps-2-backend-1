@@ -24,7 +24,6 @@ export class Event {
     type: [{
       type: {
         type: String,
-        enum: ['general', 'vip', 'jubilados', 'niños'],
         required: true
       },
       price: {
