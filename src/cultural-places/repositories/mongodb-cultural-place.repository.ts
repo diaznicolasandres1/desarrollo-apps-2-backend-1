@@ -23,7 +23,7 @@ export class MongoDBCulturalPlaceRepository implements ICulturalPlaceRepository 
   }
 
   async findAll(query: CulturalPlaceQueryDto = {}): Promise<CulturalPlace[]> {
-    const { category, isActive, search, lat, lng, radius, limit = 10, page = 1 } = query;
+    const { category, isActive, search, lat, lng, radius, limit, page = 1 } = query;
     
     const filter: any = {};
 
@@ -51,14 +51,14 @@ export class MongoDBCulturalPlaceRepository implements ICulturalPlaceRepository 
       };
     }
 
-    const skip = (page - 1) * limit;
+    let mongoQuery = this.culturalPlaceModel.find(filter).sort({ createdAt: -1 });
 
-    return await this.culturalPlaceModel
-      .find(filter)
-      .limit(limit)
-      .skip(skip)
-      .sort({ createdAt: -1 })
-      .exec();
+    if (limit) {
+      const skip = (page - 1) * limit;
+      mongoQuery = mongoQuery.limit(limit).skip(skip);
+    }
+
+    return await mongoQuery.exec();
   }
 
   async findById(id: string): Promise<CulturalPlace | null> {
