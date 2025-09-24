@@ -226,7 +226,7 @@ describe('MongoDBTicketRepository', () => {
             select: '_id name description date time',
             populate: {
               path: 'culturalPlaceId',
-              select: '_id name contact.address contact.image'
+              select: '_id name contact.address image'
             }
           }
         ]
@@ -249,7 +249,7 @@ describe('MongoDBTicketRepository', () => {
         select: '_id name description date time image',
         populate: {
           path: 'culturalPlaceId',
-          select: '_id name contact.address contact.image'
+          select: '_id name contact.address image'
         }
       });
       expect(mockQuery.exec).toHaveBeenCalled();
