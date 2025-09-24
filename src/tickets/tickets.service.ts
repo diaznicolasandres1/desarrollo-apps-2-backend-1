@@ -204,12 +204,12 @@ export class TicketsService {
           description: ticketObj.eventId.description,
           date: ticketObj.eventId.date,
           time: ticketObj.eventId.time,
-          images: ticketObj.eventId.image, 
+          image: ticketObj.eventId.image, 
           culturalPlaceId: {
             _id: ticketObj.eventId.culturalPlaceId._id,
             name: ticketObj.eventId.culturalPlaceId.name,
             address: ticketObj.eventId.culturalPlaceId.contact.address,
-            images: Array.isArray(ticketObj.eventId.culturalPlaceId.image) ? ticketObj.eventId.culturalPlaceId.image : [ticketObj.eventId.culturalPlaceId.image] // Convertir a array si no lo es
+            image: ticketObj.eventId.culturalPlaceId.image
           }
         },
         userId: ticketObj.userId,
