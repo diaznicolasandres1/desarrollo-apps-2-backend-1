@@ -64,7 +64,7 @@ export class MongoDBTicketRepository implements TicketRepository {
         select: '_id name description date time image',
         populate: {
           path: 'culturalPlaceId',
-          select: '_id name contact.address contact.image'
+          select: '_id name contact.address image'
         }
       });
     }
