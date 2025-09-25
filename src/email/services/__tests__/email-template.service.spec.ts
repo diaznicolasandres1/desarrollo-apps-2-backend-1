@@ -147,17 +147,17 @@ describe('EmailTemplateService', () => {
         userEmail: 'test@example.com',
         userName: 'John Doe',
         event: mockEvent,
-        modificationType: 'location_change',
-        oldValue: { name: 'Old Venue' },
-        newValue: { name: 'New Venue' },
+        modificationType: 'date_change',
+        oldValue: '01/01/2024',
+        newValue: '02/01/2024',
         ticketCount: 1,
         ticketTypes: ['General']
       };
 
       const html = service.generateEventModificationHTML(data);
 
-      expect(html).toContain('Old Venue');
-      expect(html).toContain('New Venue');
+      expect(html).toContain('01/01/2024');
+      expect(html).toContain('02/01/2024');
       expect(html).toContain('Cambio Importante');
     });
   });
@@ -230,10 +230,6 @@ describe('EmailTemplateService', () => {
       expect(subject).toBe('⚠️ Cambio de Fecha y Hora - Test Event');
     });
 
-    it('should return correct subject for location change', () => {
-      const subject = service.getModificationSubject('location_change', 'Test Event');
-      expect(subject).toBe('📍 Nueva Ubicación - Test Event');
-    });
 
     it('should return correct subject for activation', () => {
       const subject = service.getModificationSubject('activation', 'Test Event');
@@ -262,17 +258,6 @@ describe('EmailTemplateService', () => {
       expect(details).toBe('La fecha y hora originales eran <strong>01/01/2024 19:00</strong> y las nuevas son <strong>02/01/2024 20:00</strong>.');
     });
 
-    it('should return details for location change with object', () => {
-      const oldLocation = { name: 'Old Venue' };
-      const newLocation = { name: 'New Venue' };
-      const details = service['getModificationDetails']('location_change', oldLocation, newLocation);
-      expect(details).toBe('La ubicación original era <strong>Old Venue</strong> y la nueva ubicación es <strong>New Venue</strong>.');
-    });
-
-    it('should return details for location change with string', () => {
-      const details = service['getModificationDetails']('location_change', 'Old Venue', 'New Venue');
-      expect(details).toBe('La ubicación original era <strong>Old Venue</strong> y la nueva ubicación es <strong>New Venue</strong>.');
-    });
 
     it('should return details for activation', () => {
       const details = service['getModificationDetails']('activation', null, null);

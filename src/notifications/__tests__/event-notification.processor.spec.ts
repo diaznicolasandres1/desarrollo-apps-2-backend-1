@@ -119,9 +119,9 @@ describe('EventNotificationProcessor', () => {
             time: '20:00',
             isActive: true,
           },
-          changeType: 'location_change',
-          oldValue: 'Teatro Recoleta',
-          newValue: 'Carpe Diem',
+          changeType: 'date_change',
+          oldValue: '31/12/2024',
+          newValue: '01/01/2025',
         },
       } as any;
 

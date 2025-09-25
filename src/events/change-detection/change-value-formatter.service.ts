@@ -8,13 +8,6 @@ export class ChangeValueFormatter {
    */
   async getChangeValues(originalEvent: any, updatedEvent: any, changeType: ChangeType): Promise<{ oldValue: any; newValue: any }> {
     switch (changeType) {
-      case 'location_change':
-        // Usar los datos que ya tenemos disponibles
-        return {
-          oldValue: originalEvent.culturalPlaceId?.name || 'N/A',
-          newValue: updatedEvent.culturalPlaceId?.name || 'N/A',
-        };
-      
       case 'date_change':
         return this.formatDateChange(originalEvent, updatedEvent);
       

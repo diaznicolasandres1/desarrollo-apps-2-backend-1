@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventNotificationService } from '../../notifications/event-notification.service';
 import { EventChangeDetector, ChangeType } from './event-change-detector.service';
 import { ChangeValueFormatter } from './change-value-formatter.service';
-import type { EventRepository } from '../interfaces/event.repository.interface';
 
 @Injectable()
 export class EventChangeNotifier {
@@ -11,8 +10,7 @@ export class EventChangeNotifier {
   constructor(
     private readonly eventNotificationService: EventNotificationService,
     private readonly eventChangeDetector: EventChangeDetector,
-    private readonly changeValueFormatter: ChangeValueFormatter,
-    private readonly repository: EventRepository
+    private readonly changeValueFormatter: ChangeValueFormatter
   ) {}
 
   /**
@@ -23,24 +21,13 @@ export class EventChangeNotifier {
     
     if (changeType) {
       try {
-        // Para location_change, necesitamos obtener los nombres de los lugares culturales
-        let oldValue, newValue;
-        if (changeType === 'location_change') {
-          // Obtener el evento actualizado con populate para tener los nombres
-          const updatedEventWithPopulate = await this.repository.findById(eventId);
-          oldValue = originalEvent.culturalPlaceId?.name || 'N/A';
-          newValue = updatedEventWithPopulate?.culturalPlaceId?.name || 'N/A';
-        } else {
-          const changeValues = await this.changeValueFormatter.getChangeValues(originalEvent, updatedEvent, changeType);
-          oldValue = changeValues.oldValue;
-          newValue = changeValues.newValue;
-        }
+        const changeValues = await this.changeValueFormatter.getChangeValues(originalEvent, updatedEvent, changeType);
         
         await this.eventNotificationService.publishEventChange({
           event: updatedEvent,
           changeType: changeType,
-          oldValue,
-          newValue,
+          oldValue: changeValues.oldValue,
+          newValue: changeValues.newValue,
         });
       } catch (error) {
         this.logger.error(`Error publishing event modification for event ${eventId}:`, error);

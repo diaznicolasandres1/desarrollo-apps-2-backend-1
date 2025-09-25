@@ -8,17 +8,12 @@ import { Event } from './schemas/event.schema';
 // Validators
 import { EventValidator } from './validators/event.validator';
 import { TicketValidator } from './validators/ticket.validator';
-import { EventBusinessValidator } from './validators/event-business.validator';
 
 // Transformers
 import { EventDataTransformer } from './transformers/event-data.transformer';
 
 // Change Detection
 import { EventChangeNotifier } from './change-detection/event-change-notifier.service';
-
-// Ticket Management
-import { TicketAvailabilityService } from './ticket-management/ticket-availability.service';
-import { TicketQuantityService } from './ticket-management/ticket-quantity.service';
 
 @Injectable()
 export class EventsService {
@@ -28,11 +23,8 @@ export class EventsService {
     @Inject(EVENT_REPOSITORY) private readonly repository: EventRepository,
     private readonly eventValidator: EventValidator,
     private readonly ticketValidator: TicketValidator,
-    private readonly eventBusinessValidator: EventBusinessValidator,
     private readonly eventDataTransformer: EventDataTransformer,
-    private readonly eventChangeNotifier: EventChangeNotifier,
-    private readonly ticketAvailabilityService: TicketAvailabilityService,
-    private readonly ticketQuantityService: TicketQuantityService
+    private readonly eventChangeNotifier: EventChangeNotifier
   ) {}
 
   async create(createEventDto: CreateEventDto): Promise<Event> {
@@ -80,13 +72,8 @@ export class EventsService {
       throw new NotFoundException('Event not found');
     }
 
-    // Validar fecha (obligatoria en PUT)
-    this.eventValidator.validateEventDate(new Date(putEventDto.date));
-
-    // Validar tipos de tickets (obligatorio en PUT)
     this.ticketValidator.validateTicketTypesPut(putEventDto.ticketTypes);
-
-    // Preparar datos de actualización - solo los campos editables
+  
     const updateData: any = {
       name: putEventDto.name,
       description: putEventDto.description,
@@ -94,7 +81,6 @@ export class EventsService {
       time: putEventDto.time,
       isActive: putEventDto.isActive,
       ticketTypes: putEventDto.ticketTypes
-      // NO incluir image, culturalPlaceId ni otros campos para preservarlos del evento original
     };
 
     const updatedEvent = await this.repository.update(id, updateData);
@@ -103,7 +89,6 @@ export class EventsService {
       throw new NotFoundException('Event not found');
     }
 
-    // Notificar cambios si los hay
     await this.eventChangeNotifier.notifyEventChange(id, originalEvent, updateData, updatedEvent);
 
     return updatedEvent;
@@ -138,20 +123,4 @@ export class EventsService {
     }
   }
 
-  // Métodos de gestión de tickets delegados a servicios especializados
-  async validateEventForTicketPurchase(eventId: string): Promise<Event> {
-    return this.eventBusinessValidator.validateEventForTicketPurchase(eventId);
-  }
-
-  async checkTicketAvailability(eventId: string, ticketType: string, quantity: number): Promise<boolean> {
-    return this.ticketAvailabilityService.checkTicketAvailability(eventId, ticketType, quantity);
-  }
-
-  async getTicketAvailability(eventId: string, ticketType: string): Promise<number> {
-    return this.ticketAvailabilityService.getTicketAvailability(eventId, ticketType);
-  }
-
-  async updateTicketCount(eventId: string, ticketType: string, quantity: number): Promise<void> {
-    return this.ticketQuantityService.updateTicketCount(eventId, ticketType, quantity);
-  }
 }

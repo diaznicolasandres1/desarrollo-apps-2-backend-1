@@ -6,7 +6,7 @@ import { TicketsService } from '../tickets/tickets.service';
 
 export interface EventChangeData {
   event: any; // Event completo
-  changeType: 'location_change' | 'date_change' | 'time_change' | 'date_time_change' | 'cancellation' | 'activation';
+  changeType: 'date_change' | 'time_change' | 'date_time_change' | 'cancellation' | 'activation';
   oldValue?: any; // Valor original del campo modificado
   newValue?: any; // Nuevo valor del campo modificado
 }

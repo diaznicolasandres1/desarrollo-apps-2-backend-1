@@ -180,7 +180,6 @@ export class EmailTemplateService {
       'date_change': `⚠️ Cambio de Fecha - ${eventName}`,
       'time_change': `⚠️ Cambio de Hora - ${eventName}`,
       'date_time_change': `⚠️ Cambio de Fecha y Hora - ${eventName}`,
-      'location_change': `📍 Nueva Ubicación - ${eventName}`,
       'activation': `✅ Evento Reactivado - ${eventName}`,
     };
     
@@ -474,8 +473,6 @@ export class EmailTemplateService {
         return `La hora original era <strong>${oldValue}</strong> y la nueva hora es <strong>${newValue}</strong>.`;
       case 'date_time_change':
         return `La fecha y hora originales eran <strong>${oldValue}</strong> y las nuevas son <strong>${newValue}</strong>.`;
-      case 'location_change':
-        return `La ubicación original era <strong>${oldValue.name || oldValue}</strong> y la nueva ubicación es <strong>${newValue.name || newValue}</strong>.`;
       case 'activation':
         return `El evento ha sido reactivado y se llevará a cabo como estaba previsto.`;
       default:

@@ -11,7 +11,6 @@ import { NotificationsModule } from '../notifications/notifications.module';
 // Validators
 import { EventValidator } from './validators/event.validator';
 import { TicketValidator } from './validators/ticket.validator';
-import { EventBusinessValidator } from './validators/event-business.validator';
 
 // Transformers
 import { EventDataTransformer } from './transformers/event-data.transformer';
@@ -20,10 +19,6 @@ import { EventDataTransformer } from './transformers/event-data.transformer';
 import { EventChangeDetector } from './change-detection/event-change-detector.service';
 import { ChangeValueFormatter } from './change-detection/change-value-formatter.service';
 import { EventChangeNotifier } from './change-detection/event-change-notifier.service';
-
-// Ticket Management
-import { TicketAvailabilityService } from './ticket-management/ticket-availability.service';
-import { TicketQuantityService } from './ticket-management/ticket-quantity.service';
 
 @Module({
   imports: [
@@ -43,16 +38,12 @@ import { TicketQuantityService } from './ticket-management/ticket-quantity.servi
     // Validators
     EventValidator,
     TicketValidator,
-    EventBusinessValidator,
     // Transformers
     EventDataTransformer,
     // Change Detection
     EventChangeDetector,
     ChangeValueFormatter,
     EventChangeNotifier,
-    // Ticket Management
-    TicketAvailabilityService,
-    TicketQuantityService,
   ],
   exports: [EventsService, EventInventoryService],
 })

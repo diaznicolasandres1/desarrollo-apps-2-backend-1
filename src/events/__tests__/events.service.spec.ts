@@ -11,13 +11,10 @@ import { EventNotificationService } from '../../notifications/event-notification
 // Import the new services
 import { EventValidator } from '../validators/event.validator';
 import { TicketValidator } from '../validators/ticket.validator';
-import { EventBusinessValidator } from '../validators/event-business.validator';
 import { EventDataTransformer } from '../transformers/event-data.transformer';
 import { EventChangeDetector } from '../change-detection/event-change-detector.service';
 import { ChangeValueFormatter } from '../change-detection/change-value-formatter.service';
 import { EventChangeNotifier } from '../change-detection/event-change-notifier.service';
-import { TicketAvailabilityService } from '../ticket-management/ticket-availability.service';
-import { TicketQuantityService } from '../ticket-management/ticket-quantity.service';
 
 describe('EventsService', () => {
   let service: EventsService;
@@ -79,7 +76,6 @@ describe('EventsService', () => {
     update: jest.fn(),
     delete: jest.fn(),
     toggleActive: jest.fn(),
-    updateTicketCount: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -113,13 +109,6 @@ describe('EventsService', () => {
           useValue: {
             validateTicketTypes: jest.fn(),
             validateTicketTypesPut: jest.fn(),
-          },
-        },
-        {
-          provide: EventBusinessValidator,
-          useValue: {
-            validateEventForTicketPurchase: jest.fn(),
-            validateTicketTypeAvailability: jest.fn(),
           },
         },
         // Transformers
@@ -159,20 +148,6 @@ describe('EventsService', () => {
           useValue: {
             notifyEventChange: jest.fn(),
             notifyStatusChange: jest.fn(),
-          },
-        },
-        // Ticket Management
-        {
-          provide: TicketAvailabilityService,
-          useValue: {
-            checkTicketAvailability: jest.fn(),
-            getTicketAvailability: jest.fn(),
-          },
-        },
-        {
-          provide: TicketQuantityService,
-          useValue: {
-            updateTicketCount: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],
@@ -514,18 +489,17 @@ describe('EventsService', () => {
       expect(repository.update).not.toHaveBeenCalled();
     });
 
-    it('should validate date', async () => {
+    it('should allow past date updates', async () => {
       const pastDateDto = { ...putEventDto, date: '2020-01-01' };
       repository.findById.mockResolvedValue(mockEvent);
+      repository.update.mockResolvedValue(mockEvent);
 
-      // Mock the event validator to throw an exception
-      const eventValidator = module.get(EventValidator);
-      eventValidator.validateEventDate = jest.fn().mockImplementation(() => {
-        throw new BadRequestException('Event date cannot be in the past');
-      });
+      const result = await service.update('507f1f77bcf86cd799439011', pastDateDto);
 
-      await expect(service.update('507f1f77bcf86cd799439011', pastDateDto)).rejects.toThrow(BadRequestException);
-      expect(repository.update).not.toHaveBeenCalled();
+      expect(result).toEqual(mockEvent);
+      expect(repository.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', expect.objectContaining({
+        date: new Date('2020-01-01')
+      }));
     });
 
     it('should validate ticket types with PUT validations', async () => {
@@ -946,24 +920,6 @@ describe('EventsService', () => {
     });
   });
 
-  describe('updateTicketCount', () => {
-    it('should update ticket count successfully', async () => {
-      const ticketQuantityService = module.get(TicketQuantityService);
-      ticketQuantityService.updateTicketCount.mockResolvedValue(undefined);
-
-      await service.updateTicketCount('507f1f77bcf86cd799439011', 'general', 5);
-
-      expect(ticketQuantityService.updateTicketCount).toHaveBeenCalledWith('507f1f77bcf86cd799439011', 'general', 5);
-    });
-
-    it('should throw BadRequestException when update fails', async () => {
-      const ticketQuantityService = module.get(TicketQuantityService);
-      ticketQuantityService.updateTicketCount.mockRejectedValue(new BadRequestException('Failed to update ticket count'));
-
-      await expect(service.updateTicketCount('507f1f77bcf86cd799439011', 'general', 5))
-        .rejects.toThrow(BadRequestException);
-    });
-  });
 
 
 });
