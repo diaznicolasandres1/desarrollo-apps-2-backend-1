@@ -165,5 +165,34 @@ describe('EmailConfigService', () => {
       expect(transporter).toBeDefined();
       expect(transporter).toBe(mockTransporter);
     });
+
+    it('should handle transporter verification success', () => {
+      const mockTransporter = {
+        sendMail: jest.fn(),
+        verify: jest.fn((callback) => {
+          callback(null, true);
+        })
+      };
+      
+      jest.spyOn(require('nodemailer'), 'createTransport').mockReturnValue(mockTransporter);
+      
+      const transporter = service.createTransporter();
+
+      expect(transporter).toBeDefined();
+      expect(mockTransporter.verify).toHaveBeenCalled();
+    });
+
+    it('should handle transporter verification error', () => {
+      const mockTransporter = {
+        sendMail: jest.fn(),
+        verify: jest.fn((callback) => {
+          callback(new Error('Connection failed'), false);
+        })
+      };
+      
+      jest.spyOn(require('nodemailer'), 'createTransport').mockReturnValue(mockTransporter);
+      
+      expect(() => service.createTransporter()).toThrow('Email configuration error: Connection failed');
+    });
   });
 });

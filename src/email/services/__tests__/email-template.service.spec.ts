@@ -60,6 +60,49 @@ describe('EmailTemplateService', () => {
       expect(html).toContain('$300');
       expect(html).toContain('Confirmación de Reserva');
     });
+
+    it('should generate HTML for ticket confirmation without QR codes', () => {
+      const mockEvent = {
+        _id: 'event123',
+        name: 'Test Event',
+        description: 'Test Description',
+        date: '2025-12-31T20:00:00.000Z',
+        time: '20:00',
+      };
+
+      const mockTickets = [
+        {
+          _id: 'ticket1',
+          ticketType: 'general',
+          price: 1000,
+        },
+        {
+          _id: 'ticket2',
+          ticketType: 'vip',
+          price: 2000,
+        },
+      ];
+
+      const data = {
+        userEmail: 'test@example.com',
+        userName: 'John Doe',
+        event: mockEvent,
+        tickets: mockTickets,
+        totalAmount: 3000,
+      };
+
+      mockAttachmentService.hasQRCode.mockReturnValue(false);
+
+      const html = service.generateTicketConfirmationHTML(data);
+
+      expect(html).toContain('John Doe');
+      expect(html).toContain('Test Event');
+      expect(html).toContain('general');
+      expect(html).toContain('vip');
+      expect(html).toContain('QR no disponible');
+      expect(mockAttachmentService.hasQRCode).toHaveBeenCalledWith(mockTickets[0]);
+      expect(mockAttachmentService.hasQRCode).toHaveBeenCalledWith(mockTickets[1]);
+    });
   });
 
   describe('generateEventModificationHTML', () => {
@@ -200,6 +243,45 @@ describe('EmailTemplateService', () => {
     it('should return default subject for unknown modification type', () => {
       const subject = service.getModificationSubject('unknown_type', 'Test Event');
       expect(subject).toBe('📢 Actualización - Test Event');
+    });
+  });
+
+  describe('getModificationDetails', () => {
+    it('should return details for date change', () => {
+      const details = service['getModificationDetails']('date_change', '01/01/2024', '02/01/2024');
+      expect(details).toBe('La fecha original era <strong>01/01/2024</strong> y la nueva fecha es <strong>02/01/2024</strong>.');
+    });
+
+    it('should return details for time change', () => {
+      const details = service['getModificationDetails']('time_change', '19:00', '20:00');
+      expect(details).toBe('La hora original era <strong>19:00</strong> y la nueva hora es <strong>20:00</strong>.');
+    });
+
+    it('should return details for date_time change', () => {
+      const details = service['getModificationDetails']('date_time_change', '01/01/2024 19:00', '02/01/2024 20:00');
+      expect(details).toBe('La fecha y hora originales eran <strong>01/01/2024 19:00</strong> y las nuevas son <strong>02/01/2024 20:00</strong>.');
+    });
+
+    it('should return details for location change with object', () => {
+      const oldLocation = { name: 'Old Venue' };
+      const newLocation = { name: 'New Venue' };
+      const details = service['getModificationDetails']('location_change', oldLocation, newLocation);
+      expect(details).toBe('La ubicación original era <strong>Old Venue</strong> y la nueva ubicación es <strong>New Venue</strong>.');
+    });
+
+    it('should return details for location change with string', () => {
+      const details = service['getModificationDetails']('location_change', 'Old Venue', 'New Venue');
+      expect(details).toBe('La ubicación original era <strong>Old Venue</strong> y la nueva ubicación es <strong>New Venue</strong>.');
+    });
+
+    it('should return details for activation', () => {
+      const details = service['getModificationDetails']('activation', null, null);
+      expect(details).toBe('El evento ha sido reactivado y se llevará a cabo como estaba previsto.');
+    });
+
+    it('should return default details for unknown modification type', () => {
+      const details = service['getModificationDetails']('unknown_type', null, null);
+      expect(details).toBe('Ha habido una actualización importante en el evento.');
     });
   });
 });
