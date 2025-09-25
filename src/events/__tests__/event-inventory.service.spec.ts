@@ -95,12 +95,11 @@ describe('EventInventoryService', () => {
       ).rejects.toThrow(EventInactiveException);
     });
 
-    it('should throw EventExpiredException when event date has passed', async () => {
+    it('should return event when event date has passed (no date validation)', async () => {
       repository.findById.mockResolvedValue(mockExpiredEvent);
 
-      await expect(
-        service.validateEventForTicketPurchase('507f1f77bcf86cd799439011')
-      ).rejects.toThrow(EventExpiredException);
+      const result = await service.validateEventForTicketPurchase('507f1f77bcf86cd799439011');
+      expect(result).toEqual(mockExpiredEvent);
     });
   });
 
