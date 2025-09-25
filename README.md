@@ -19,6 +19,10 @@ API para gestionar lugares culturales de Buenos Aires (museos, centros culturale
 - **Testing:** Jest
 - **Validation:** Class-validator
 - **Architecture:** Clean Architecture with Repository Pattern
+- **Queue System:** Bull with Redis
+- **Email Service:** Nodemailer
+- **QR Code Generation:** QRCode
+- **Caching:** Redis
 
 ## 📋 Features
 
@@ -26,9 +30,14 @@ API para gestionar lugares culturales de Buenos Aires (museos, centros culturale
 - **CRUD Operations** for Cultural Places
 - **Events Management** system with ticket types
 - **Ticket Management** system (purchase, validation, history)
+- **User Management** system (authentication, registration, profiles)
 - **Advanced Filtering** (by category, rating, location)
 - **Geospatial Queries** (nearby places)
 - **Schedule Management** (open/closed days)
+- **Email Notifications** system for ticket confirmations
+- **Queue-based Event Processing** with Bull and Redis
+- **QR Code Generation** for tickets
+- **Real-time Notifications** for event updates
 - **API Documentation** with Swagger
 - **Unit Tests** with high coverage
 - **Clean Architecture** implementation
@@ -39,8 +48,13 @@ API para gestionar lugares culturales de Buenos Aires (museos, centros culturale
 - **🚀 Improved Frontend Experience**: Reduced API calls with populated data
 - **📚 Updated Documentation**: Complete API examples and guides
 
-### 🚧 In Progress
-- **User Authentication** and authorization
+### 🆕 Latest Features (v2.0)
+- **📧 Email System**: Automated ticket confirmations and event notifications
+- **⚡ Queue Processing**: Background job processing for notifications
+- **🔔 Real-time Notifications**: Event updates and ticket status changes
+- **📱 QR Code Tickets**: Digital tickets with QR code generation
+- **👥 User Management**: Complete user authentication and profile system
+- **🗄 Redis Caching**: Improved performance with Redis caching
 
 ## 🏗 Architecture
 
@@ -61,6 +75,7 @@ src/
 │   ├── repositories/        # Data access layer
 │   ├── schemas/            # MongoDB schemas
 │   ├── __tests__/          # Unit tests
+│   ├── event-inventory.service.ts
 │   ├── events.controller.ts
 │   ├── events.service.ts
 │   └── events.module.ts
@@ -74,6 +89,25 @@ src/
 │   ├── tickets.service.ts
 │   └── tickets.module.ts
 ├── users/                   # Users module
+│   ├── dto/                 # Data Transfer Objects
+│   ├── interfaces/          # Repository interfaces
+│   ├── repositories/        # Data access layer
+│   ├── user/               # User sub-module
+│   ├── user.schema.ts      # User MongoDB schema
+│   └── users.module.ts
+├── notifications/           # Notifications module
+│   ├── __tests__/          # Unit tests
+│   ├── event-notification.processor.ts
+│   ├── event-notification.service.ts
+│   └── notifications.module.ts
+├── email/                   # Email service module
+│   ├── __tests__/          # Unit tests
+│   ├── email.service.ts
+│   └── email.module.ts
+├── redis/                   # Redis cache module
+│   └── redis.module.ts
+├── common/                  # Common utilities
+│   └── exceptions/         # Custom exceptions
 ├── config/                  # Configuration files
 └── main.ts                  # Application entry point
 ```
@@ -83,6 +117,7 @@ src/
 ### Prerequisites
 - Node.js (v18 or higher)
 - MongoDB (local or Atlas)
+- Redis (local or cloud instance)
 - npm or yarn
 
 ### Installation
@@ -103,10 +138,24 @@ npm install
 # Copy environment variables
 cp .env.example .env
 
-# Edit .env with your MongoDB URI
+# Edit .env with your configuration
 MONGODB_URI=mongodb://localhost:27017/cultural-places
 PORT=3000
 NODE_ENV=development
+
+# Email Configuration (for notifications)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-app-password
+EMAIL_FROM=noreply@cultural-places.com
+
+# Redis Configuration (for caching and queues)
+REDIS_URL=redis://localhost:6379
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
 ```
 
 4. **Run the application**
@@ -181,6 +230,17 @@ npm run test:watch
 | `PATCH` | `/api/v1/tickets/:id/use` | Mark ticket as used |
 | `PATCH` | `/api/v1/tickets/:id/cancel` | Cancel ticket |
 | `DELETE` | `/api/v1/tickets/:id` | Delete ticket |
+
+### Users
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/v1/users/register` | Register new user |
+| `POST` | `/api/v1/users/login` | User login |
+| `GET` | `/api/v1/users` | Get all users |
+| `GET` | `/api/v1/users/:id` | Get user by ID |
+| `PUT` | `/api/v1/users/:id` | Update user |
+| `DELETE` | `/api/v1/users/:id` | Delete user |
 
 ### Query Parameters
 
@@ -281,6 +341,22 @@ npm run test:watch
 }
 ```
 
+### User
+```typescript
+{
+  _id: ObjectId;            // MongoDB ObjectId
+  email: string;             // User email (unique)
+  password: string;          // Hashed password
+  firstName: string;         // User first name
+  lastName: string;          // User last name
+  phone?: string;            // Optional phone number
+  dateOfBirth?: Date;        // Optional date of birth
+  isActive: boolean;         // User active status
+  createdAt: Date;           // Creation timestamp
+  updatedAt: Date;          // Last update timestamp
+}
+```
+
 ## 🚀 Deployment
 
 ### Render (Recommended)
@@ -301,6 +377,16 @@ npm run test:watch
 | `NODE_ENV` | Environment mode | development |
 | `PORT` | Server port | 3000 |
 | `MONGODB_URI` | MongoDB connection string | localhost |
+| `EMAIL_HOST` | SMTP server host | smtp.gmail.com |
+| `EMAIL_PORT` | SMTP server port | 587 |
+| `EMAIL_USER` | SMTP username | - |
+| `EMAIL_PASS` | SMTP password | - |
+| `EMAIL_FROM` | From email address | noreply@cultural-places.com |
+| `REDIS_URL` | Redis connection string | redis://localhost:6379 |
+| `REDIS_HOST` | Redis host | localhost |
+| `REDIS_PORT` | Redis port | 6379 |
+| `REDIS_PASSWORD` | Redis password | - |
+| `REDIS_DB` | Redis database number | 0 |
 
 ## 📊 Project Status
 
@@ -308,57 +394,42 @@ npm run test:watch
 - **✅ Phase 2:** Advanced Features (Complete)
 - **✅ Phase 3:** Events Management (Complete)
 - **✅ Phase 4:** Ticket Management (Complete)
-- **⏳ Phase 5:** User Management (Pending)
+- **✅ Phase 5:** User Management (Complete)
+- **✅ Phase 6:** Notifications & Email System (Complete)
+- **✅ Phase 7:** Queue Processing & Redis Caching (Complete)
+- **✅ Phase 8:** QR Code Generation (Complete)
 
 ## 📝 License
 
 This project is licensed under the MIT License.
 
-## 🆕 Recent Updates (v1.1)
+## 🚀 Key Features
 
-### 🎯 What's New
+### 🎫 Complete Ticket Management System
+- **Digital Tickets**: QR code generation for each ticket
+- **Email Notifications**: Automatic confirmation emails with ticket details
+- **Real-time Updates**: Queue-based processing for instant notifications
+- **Ticket Validation**: Secure ticket validation and usage tracking
 
-**Enhanced Event Responses**: Events now include complete cultural place information, eliminating the need for additional API calls from the frontend.
+### 👥 User Management
+- **User Registration & Authentication**: Complete user lifecycle management
+- **Profile Management**: User profiles with personal information
+- **Ticket History**: Users can view their complete ticket purchase history
 
-**Before:**
-```json
-{
-  "culturalPlaceId": "68b8d2e112a45cdbc2ec9856"
-}
-```
+### 📧 Communication System
+- **Email Service**: Automated email notifications using Nodemailer
+- **Queue Processing**: Background job processing with Bull and Redis
+- **Event Notifications**: Real-time notifications for event updates
 
-**After:**
-```json
-{
-  "culturalPlaceId": {
-    "_id": "68b8d2e112a45cdbc2ec9856",
-    "name": "Centro Cultural Raices",
-    "description": "Un centro cultural que ofrece servicios de biblioteca...",
-    "category": "Centro Cultural",
-    "characteristics": ["Servicios de Biblioteca", "Proyecciones de Cine", "Galería de Arte"],
-    "contact": {
-      "address": "Agrelo 3045",
-      "coordinates": {"lat": -34.61724004, "lng": -58.40879856},
-      "phone": "49316157",
-      "website": "https://example.com",
-      "email": "info@lugar.com"
-    },
-    "image": "https://picsum.photos/800/600?random=756",
-    "rating": 3.3
-  }
-}
-```
-
-### 📚 Documentation
-
-- **API Examples**: [docs/api-curl-examples.md](docs/api-curl-examples.md)
-- **Frontend Guide**: [docs/frontend-quick-reference.md](docs/frontend-quick-reference.md)
-- **Recent Updates**: [docs/recent-updates.md](docs/recent-updates.md)
-- **Database Design**: [docs/database-design.md](docs/database-design.md)
+### 🏗 Scalable Architecture
+- **Clean Architecture**: Repository pattern with dependency injection
+- **Microservices Ready**: Modular design for easy scaling
+- **High Test Coverage**: Comprehensive unit and integration tests
+- **Production Ready**: Docker support and cloud deployment configuration
 
 ## 📞 Support
 
-- **Email:** your-email@example.com
-- **Issues:** [GitHub Issues](https://github.com/your-username/repo-name/issues)
-- **Documentation:** [API Docs](https://cultural-places-api.onrender.com/docs)
+- **API Documentation**: [https://cultural-places-api.onrender.com/docs](https://cultural-places-api.onrender.com/docs)
+- **Live API**: [https://cultural-places-api.onrender.com](https://cultural-places-api.onrender.com)
+- **GitHub Repository**: [https://github.com/diaznicolasandres1/desarrollo-apps-2-backend-1](https://github.com/diaznicolasandres1/desarrollo-apps-2-backend-1)
 4
