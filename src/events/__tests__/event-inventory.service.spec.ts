@@ -129,7 +129,7 @@ describe('EventInventoryService', () => {
       expect(result).toBe(false);
     });
 
-    it('should return false when ticket type is inactive', async () => {
+    it('should throw BadRequestException when ticket type is inactive', async () => {
       const eventWithInactiveTicketType = {
         ...mockEvent,
         ticketTypes: [
@@ -144,25 +144,21 @@ describe('EventInventoryService', () => {
       };
       repository.findById.mockResolvedValue(eventWithInactiveTicketType);
 
-      const result = await service.checkTicketAvailability(
+      await expect(service.checkTicketAvailability(
         '507f1f77bcf86cd799439011',
         'general',
         5
-      );
-
-      expect(result).toBe(false);
+      )).rejects.toThrow(BadRequestException);
     });
 
-    it('should return false when ticket type does not exist', async () => {
+    it('should throw BadRequestException when ticket type does not exist', async () => {
       repository.findById.mockResolvedValue(mockEvent);
 
-      const result = await service.checkTicketAvailability(
+      await expect(service.checkTicketAvailability(
         '507f1f77bcf86cd799439011',
         'nonexistent',
         5
-      );
-
-      expect(result).toBe(false);
+      )).rejects.toThrow(BadRequestException);
     });
 
     it('should throw EventNotFoundException when event does not exist', async () => {
@@ -187,7 +183,7 @@ describe('EventInventoryService', () => {
       expect(repository.findById).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
     });
 
-    it('should return 0 for inactive ticket type', async () => {
+    it('should throw BadRequestException for inactive ticket type', async () => {
       const eventWithInactiveTicketType = {
         ...mockEvent,
         ticketTypes: [
@@ -202,23 +198,19 @@ describe('EventInventoryService', () => {
       };
       repository.findById.mockResolvedValue(eventWithInactiveTicketType);
 
-      const result = await service.getTicketAvailability(
+      await expect(service.getTicketAvailability(
         '507f1f77bcf86cd799439011',
         'general'
-      );
-
-      expect(result).toBe(0);
+      )).rejects.toThrow(BadRequestException);
     });
 
-    it('should return 0 for nonexistent ticket type', async () => {
+    it('should throw BadRequestException for nonexistent ticket type', async () => {
       repository.findById.mockResolvedValue(mockEvent);
 
-      const result = await service.getTicketAvailability(
+      await expect(service.getTicketAvailability(
         '507f1f77bcf86cd799439011',
         'nonexistent'
-      );
-
-      expect(result).toBe(0);
+      )).rejects.toThrow(BadRequestException);
     });
 
     it('should throw EventNotFoundException when event does not exist', async () => {

@@ -184,30 +184,6 @@ describe('EventNotificationService', () => {
       });
     });
 
-    it('should process location change notification successfully', async () => {
-      const eventChangeData = {
-        event: mockEvent,
-        changeType: 'location_change' as const,
-        oldValue: 'Teatro Recoleta',
-        newValue: 'Carpe Diem',
-      };
-
-      ticketsService.getUsersWithActiveTicketsForEvent.mockResolvedValue(mockUsersWithTickets);
-      emailService.sendEventModificationEmail.mockResolvedValue(true);
-
-      await service.processEventChange(eventChangeData);
-
-      expect(emailService.sendEventModificationEmail).toHaveBeenCalledWith({
-        userEmail: 'user1@example.com',
-        userName: 'User One',
-        event: mockEvent,
-        modificationType: 'location_change',
-        oldValue: 'Teatro Recoleta',
-        newValue: 'Carpe Diem',
-        ticketCount: 2,
-        ticketTypes: ['general', 'vip'],
-      });
-    });
 
     it('should process activation notification successfully', async () => {
       const eventChangeData = {

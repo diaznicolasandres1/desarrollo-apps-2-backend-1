@@ -14,7 +14,7 @@ export class EventInventoryService {
   async validateEventForTicketPurchase(eventId: string): Promise<Event> {
     const event = await this.repository.findById(eventId);
     if (!event) {
-      throw new NotFoundException('Event not found');
+      throw new EventNotFoundException(eventId);
     }
 
     if (!event.isActive) {
@@ -24,31 +24,37 @@ export class EventInventoryService {
     return event;
   }
 
+  /**
+   * Valida que un tipo de ticket específico esté disponible y activo
+   */
+  validateTicketTypeAvailability(event: any, ticketType: string): void {
+    const ticketTypeData = event.ticketTypes.find((tt: any) => tt.type === ticketType);
+    if (!ticketTypeData) {
+      throw new BadRequestException(`Ticket type ${ticketType} not available for this event`);
+    }
+
+    if (!ticketTypeData.isActive) {
+      throw new BadRequestException(`Ticket type ${ticketType} is not active for this event`);
+    }
+  }
+
   async checkTicketAvailability(eventId: string, ticketType: string, quantity: number): Promise<boolean> {
-    const event = await this.repository.findById(eventId);
-    if (!event) {
-      throw new EventNotFoundException(eventId);
-    }
+    const event = await this.validateEventForTicketPurchase(eventId);
+    
+    this.validateTicketTypeAvailability(event, ticketType);
 
-    const ticketTypeData = event.ticketTypes.find(tt => tt.type === ticketType);
-    if (!ticketTypeData || !ticketTypeData.isActive) {
-      return false;
-    }
-
-    return (ticketTypeData.initialQuantity - ticketTypeData.soldQuantity) >= quantity;
+    const ticketTypeData = event.ticketTypes.find((tt: any) => tt.type === ticketType)!;
+    const availableQuantity = ticketTypeData.initialQuantity - ticketTypeData.soldQuantity;
+    
+    return availableQuantity >= quantity;
   }
 
   async getTicketAvailability(eventId: string, ticketType: string): Promise<number> {
-    const event = await this.repository.findById(eventId);
-    if (!event) {
-      throw new EventNotFoundException(eventId);
-    }
+    const event = await this.validateEventForTicketPurchase(eventId);
+    
+    this.validateTicketTypeAvailability(event, ticketType);
 
-    const ticketTypeData = event.ticketTypes.find(tt => tt.type === ticketType);
-    if (!ticketTypeData || !ticketTypeData.isActive) {
-      return 0;
-    }
-
+    const ticketTypeData = event.ticketTypes.find((tt: any) => tt.type === ticketType)!;
     return ticketTypeData.initialQuantity - ticketTypeData.soldQuantity;
   }
 
