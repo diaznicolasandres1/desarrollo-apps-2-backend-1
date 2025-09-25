@@ -5,6 +5,10 @@ import { CreateCulturalPlaceDto } from './dto/create-cultural-place.dto';
 import { UpdateCulturalPlaceDto } from './dto/update-cultural-place.dto';
 import { CulturalPlaceQueryDto } from './interfaces/cultural-place.interface';
 import { CulturalPlace } from './schemas/cultural-place.schema';
+import { CoordinatesValidator } from './validators/coordinates.validator';
+import { SchedulesValidator } from './validators/schedules.validator';
+import { CoordinatesTransformer } from '../common/transformers/coordinates.transformer';
+import { ColorService } from '../common/services/color.service';
 
 @Injectable()
 export class CulturalPlacesService {
@@ -24,21 +28,18 @@ export class CulturalPlacesService {
       }
 
       if (createCulturalPlaceDto.contact?.coordinates) {
-        this.validateCoordinates(createCulturalPlaceDto.contact.coordinates);
+        CoordinatesValidator.validate(createCulturalPlaceDto.contact.coordinates);
       }
 
-      this.validateSchedules(createCulturalPlaceDto.schedules);
+      SchedulesValidator.validate(createCulturalPlaceDto.schedules);
 
-      // Transformar coordenadas de {lat, lng} a GeoJSON para almacenamiento
+      // Transformar coordenadas de {lat, lng} a GeoJSON para almacenamiento (Front end maneja distinto formato)
       const transformedData = {
         ...createCulturalPlaceDto,
-        color: createCulturalPlaceDto.color || this.generateRandomColor(),
+        color: createCulturalPlaceDto.color || ColorService.generateRandomColor(),
         contact: {
           ...createCulturalPlaceDto.contact,
-          coordinates: {
-            type: 'Point' as const,
-            coordinates: [createCulturalPlaceDto.contact.coordinates.lng, createCulturalPlaceDto.contact.coordinates.lat] as [number, number]
-          }
+          coordinates: CoordinatesTransformer.toGeoJSON(createCulturalPlaceDto.contact.coordinates)
         }
       };
 
@@ -59,7 +60,7 @@ export class CulturalPlacesService {
 
   async findAll(query: CulturalPlaceQueryDto = {}): Promise<CulturalPlace[]> {
     const places = await this.culturalPlaceRepository.findAll(query);
-    return places.map(place => this.transformCoordinatesForResponse((place as any).toObject ? (place as any).toObject() : place));
+    return places.map(place => CoordinatesTransformer.fromGeoJSON((place as any).toObject ? (place as any).toObject() : place));
   }
 
   async findOne(id: string): Promise<CulturalPlace> {
@@ -69,7 +70,7 @@ export class CulturalPlacesService {
       throw new NotFoundException('Cultural place not found');
     }
 
-    return this.transformCoordinatesForResponse((place as any).toObject ? (place as any).toObject() : place);
+    return CoordinatesTransformer.fromGeoJSON((place as any).toObject ? (place as any).toObject() : place);
   }
 
   async update(id: string, updateCulturalPlaceDto: UpdateCulturalPlaceDto): Promise<CulturalPlace> {
@@ -84,32 +85,24 @@ export class CulturalPlacesService {
         }
       }
 
-      // Crear una copia para transformar las coordenadas sin modificar el DTO original
       const transformedUpdateDto = { ...updateCulturalPlaceDto };
       
       if (transformedUpdateDto.contact?.coordinates) {
-        this.validateCoordinates(transformedUpdateDto.contact.coordinates);
+        CoordinatesValidator.validate(transformedUpdateDto.contact.coordinates);
         // Transformar coordenadas de {lat, lng} a GeoJSON para almacenamiento
         transformedUpdateDto.contact = {
           ...transformedUpdateDto.contact,
-          coordinates: {
-            type: 'Point' as const,
-            coordinates: [transformedUpdateDto.contact.coordinates.lng, transformedUpdateDto.contact.coordinates.lat] as [number, number]
-          } as any
+          coordinates: CoordinatesTransformer.toGeoJSON(transformedUpdateDto.contact.coordinates) as any
         };
       }
 
       if (updateCulturalPlaceDto.schedules) {
-        this.validateSchedules(updateCulturalPlaceDto.schedules);
+        SchedulesValidator.validate(updateCulturalPlaceDto.schedules);
       }
 
       const updatedPlace = await this.culturalPlaceRepository.update(id, transformedUpdateDto as any);
 
-      if (!updatedPlace) {
-        throw new NotFoundException('Cultural place not found');
-      }
-
-      return this.transformCoordinatesForResponse((updatedPlace as any).toObject ? (updatedPlace as any).toObject() : updatedPlace);
+      return CoordinatesTransformer.fromGeoJSON((updatedPlace as any).toObject ? (updatedPlace as any).toObject() : updatedPlace);
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof ConflictException || error instanceof BadRequestException) {
         throw error;
@@ -129,7 +122,7 @@ export class CulturalPlacesService {
       throw new NotFoundException('Error updating place status');
     }
 
-    return this.transformCoordinatesForResponse((updatedPlace as any).toObject ? (updatedPlace as any).toObject() : updatedPlace);
+    return CoordinatesTransformer.fromGeoJSON((updatedPlace as any).toObject ? (updatedPlace as any).toObject() : updatedPlace);
   }
 
   async remove(id: string): Promise<void> {
@@ -144,107 +137,17 @@ export class CulturalPlacesService {
 
   async findByCategory(category: string): Promise<CulturalPlace[]> {
     const places = await this.culturalPlaceRepository.findByCategory(category);
-    return places.map(place => this.transformCoordinatesForResponse((place as any).toObject ? (place as any).toObject() : place));
+    return places.map(place => CoordinatesTransformer.fromGeoJSON((place as any).toObject ? (place as any).toObject() : place));
   }
 
   async findOpenPlaces(dayOfWeek: string): Promise<CulturalPlace[]> {
     const places = await this.culturalPlaceRepository.findOpenPlaces(dayOfWeek);
-    return places.map(place => this.transformCoordinatesForResponse((place as any).toObject ? (place as any).toObject() : place));
+    return places.map(place => CoordinatesTransformer.fromGeoJSON((place as any).toObject ? (place as any).toObject() : place));
   }
 
   async findTopRated(limit: number = 10): Promise<CulturalPlace[]> {
     const places = await this.culturalPlaceRepository.findTopRated(limit);
-    return places.map(place => this.transformCoordinatesForResponse((place as any).toObject ? (place as any).toObject() : place));
+    return places.map(place => CoordinatesTransformer.fromGeoJSON((place as any).toObject ? (place as any).toObject() : place));
   }
 
-  private validateCoordinates(coordinates: { lat: number; lng: number }): void {
-    if (typeof coordinates.lat !== 'number' || typeof coordinates.lng !== 'number') {
-      throw new BadRequestException('Coordinates must have lat and lng as numbers');
-    }
-    
-    if (coordinates.lat < -90 || coordinates.lat > 90) {
-      throw new BadRequestException('Latitude must be between -90 and 90');
-    }
-    
-    if (coordinates.lng < -180 || coordinates.lng > 180) {
-      throw new BadRequestException('Longitude must be between -180 and 180');
-    }
-  }
-
-  private validateSchedules(schedules: any): void {
-    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    
-    for (const day of days) {
-      const schedule = schedules[day];
-      
-      if (!schedule) {
-        throw new BadRequestException(`Schedule for ${day} is required`);
-      }
-
-      if (!schedule.closed) {
-        if (!schedule.open || !schedule.close) {
-          throw new BadRequestException(`Opening and closing hours are required for ${day}`);
-        }
-
-        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-        if (!timeRegex.test(schedule.open) || !timeRegex.test(schedule.close)) {
-          throw new BadRequestException(`Invalid time format for ${day}. Use HH:MM`);
-        }
-      }
-    }
-  }
-
-  private generateRandomColor(): string {
-    // Array de colores predefinidos para mantener consistencia visual
-    const colors = [
-      '#FF6B6B', // Rojo coral
-      '#4ECDC4', // Turquesa
-      '#45B7D1', // Azul claro
-      '#96CEB4', // Verde menta
-      '#FECA57', // Amarillo dorado
-      '#FF9FF3', // Rosa
-      '#A8E6CF', // Verde claro
-      '#FFD93D', // Amarillo brillante
-      '#6C5CE7', // Morado
-      '#FD79A8', // Rosa fuerte
-      '#00B894', // Verde esmeralda
-      '#FDCB6E', // Naranja suave
-      '#E17055', // Rojo terracota
-      '#74B9FF', // Azul cielo
-      '#81ECEC', // Cian
-    ];
-
-    const randomIndex = Math.floor(Math.random() * colors.length);
-    return colors[randomIndex];
-  }
-
-  /**
-   * Transforma las coordenadas GeoJSON a formato {lat, lng} para mantener compatibilidad con el frontend
-   */
-  private transformCoordinatesForResponse(place: any): any {
-    if (place && place.contact && place.contact.coordinates) {
-      const coordinates = place.contact.coordinates;
-      
-      // Si ya está en formato {lat, lng}, devolverlo tal como está
-      if (coordinates.lat !== undefined && coordinates.lng !== undefined) {
-        return place;
-      }
-      
-      // Si está en formato GeoJSON, convertir a {lat, lng}
-      if (coordinates.type === 'Point' && Array.isArray(coordinates.coordinates)) {
-        return {
-          ...place,
-          contact: {
-            ...place.contact,
-            coordinates: {
-              lat: coordinates.coordinates[1], // lat es el segundo elemento
-              lng: coordinates.coordinates[0]  // lng es el primer elemento
-            }
-          }
-        };
-      }
-    }
-    
-    return place;
-  }
 }
