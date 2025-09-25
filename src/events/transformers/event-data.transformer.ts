@@ -24,6 +24,7 @@ export class EventDataTransformer {
    * Transforma las coordenadas GeoJSON del lugar cultural a formato {lat, lng} para mantener compatibilidad con el frontend
    */
   transformEventCoordinates(event: any): any {
+    // El repositorio ya devuelve objetos planos
     if (event && event.culturalPlaceId && event.culturalPlaceId.contact && event.culturalPlaceId.contact.coordinates) {
       const coordinates = event.culturalPlaceId.contact.coordinates;
       
@@ -58,8 +59,8 @@ export class EventDataTransformer {
    */
   transformEventsCoordinates(events: any[]): any[] {
     return events.map(event => {
-      const eventObj = event.toObject ? event.toObject() : event;
-      return this.transformEventCoordinates(eventObj);
+      return this.transformEventCoordinates(event);
     });
   }
+
 }
