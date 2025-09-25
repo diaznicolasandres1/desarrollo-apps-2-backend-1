@@ -3,10 +3,18 @@ import { BadRequestException } from '@nestjs/common';
 import { EventsService } from '../events.service';
 import { EVENT_REPOSITORY } from '../interfaces/event.repository.token';
 import { EventNotificationService } from '../../notifications/event-notification.service';
+import { EventValidator } from '../validators/event.validator';
+import { TicketValidator } from '../validators/ticket.validator';
+import { EventBusinessValidator } from '../validators/event-business.validator';
+import { EventDataTransformer } from '../transformers/event-data.transformer';
+import { EventChangeNotifier } from '../change-detection/event-change-notifier.service';
+import { TicketAvailabilityService } from '../ticket-management/ticket-availability.service';
+import { TicketQuantityService } from '../ticket-management/ticket-quantity.service';
 
 describe('EventsService Ticket Count Tests', () => {
   let service: EventsService;
   let mockEventRepository: any;
+  let mockTicketQuantityService: any;
 
   const mockEvent = {
     _id: '507f1f77bcf86cd799439011',
@@ -60,19 +68,68 @@ describe('EventsService Ticket Count Tests', () => {
             publishEventChange: jest.fn(),
           },
         },
+        {
+          provide: EventValidator,
+          useValue: {
+            validateEventData: jest.fn(),
+            validateEventDate: jest.fn(),
+            validateEventTime: jest.fn(),
+          },
+        },
+        {
+          provide: TicketValidator,
+          useValue: {
+            validateTicketTypes: jest.fn(),
+          },
+        },
+        {
+          provide: EventBusinessValidator,
+          useValue: {
+            validateEventForTicketPurchase: jest.fn(),
+          },
+        },
+        {
+          provide: EventDataTransformer,
+          useValue: {
+            transformCreateEventData: jest.fn(),
+            transformEventsCoordinates: jest.fn(),
+            transformEventCoordinates: jest.fn(),
+          },
+        },
+        {
+          provide: EventChangeNotifier,
+          useValue: {
+            notifyEventChange: jest.fn(),
+            notifyStatusChange: jest.fn(),
+          },
+        },
+        {
+          provide: TicketAvailabilityService,
+          useValue: {
+            checkTicketAvailability: jest.fn(),
+            getTicketAvailability: jest.fn(),
+          },
+        },
+        {
+          provide: TicketQuantityService,
+          useValue: {
+            updateTicketCount: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<EventsService>(EventsService);
+    mockTicketQuantityService = module.get<TicketQuantityService>(TicketQuantityService);
   });
 
   describe('updateTicketCount', () => {
     it('should successfully update ticket count', async () => {
-      mockEventRepository.updateTicketCount.mockResolvedValue(true);
+      mockTicketQuantityService.updateTicketCount.mockResolvedValue(true);
 
       await service.updateTicketCount('507f1f77bcf86cd799439011', 'general', 2);
 
-      expect(mockEventRepository.updateTicketCount).toHaveBeenCalledWith(
+      expect(mockTicketQuantityService.updateTicketCount).toHaveBeenCalledWith(
         '507f1f77bcf86cd799439011',
         'general',
         2
@@ -80,7 +137,9 @@ describe('EventsService Ticket Count Tests', () => {
     });
 
     it('should throw BadRequestException when update fails', async () => {
-      mockEventRepository.updateTicketCount.mockResolvedValue(false);
+      mockTicketQuantityService.updateTicketCount.mockRejectedValue(
+        new BadRequestException('Failed to update ticket count')
+      );
 
       await expect(
         service.updateTicketCount('507f1f77bcf86cd799439011', 'general', 2)
@@ -88,7 +147,9 @@ describe('EventsService Ticket Count Tests', () => {
     });
 
     it('should throw BadRequestException when update throws error', async () => {
-      mockEventRepository.updateTicketCount.mockResolvedValue(false);
+      mockTicketQuantityService.updateTicketCount.mockRejectedValue(
+        new BadRequestException('Update error')
+      );
 
       await expect(
         service.updateTicketCount('507f1f77bcf86cd799439011', 'general', 2)

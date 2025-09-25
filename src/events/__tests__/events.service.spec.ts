@@ -8,10 +8,22 @@ import { UpdateEventDto } from '../dto/update-event.dto';
 import { PutEventDto } from '../dto/put-event.dto';
 import { EventNotificationService } from '../../notifications/event-notification.service';
 
+// Import the new services
+import { EventValidator } from '../validators/event.validator';
+import { TicketValidator } from '../validators/ticket.validator';
+import { EventBusinessValidator } from '../validators/event-business.validator';
+import { EventDataTransformer } from '../transformers/event-data.transformer';
+import { EventChangeDetector } from '../change-detection/event-change-detector.service';
+import { ChangeValueFormatter } from '../change-detection/change-value-formatter.service';
+import { EventChangeNotifier } from '../change-detection/event-change-notifier.service';
+import { TicketAvailabilityService } from '../ticket-management/ticket-availability.service';
+import { TicketQuantityService } from '../ticket-management/ticket-quantity.service';
+
 describe('EventsService', () => {
   let service: EventsService;
   let repository: jest.Mocked<EventRepository>;
   let eventNotificationService: jest.Mocked<EventNotificationService>;
+  let module: TestingModule;
 
   const mockEvent: any = {
     _id: '507f1f77bcf86cd799439011',
@@ -71,7 +83,10 @@ describe('EventsService', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    // Reset all mocks
+    jest.clearAllMocks();
+
+    module = await Test.createTestingModule({
       providers: [
         EventsService,
         {
@@ -82,6 +97,82 @@ describe('EventsService', () => {
           provide: EventNotificationService,
           useValue: {
             publishEventChange: jest.fn(),
+          },
+        },
+        // Validators
+        {
+          provide: EventValidator,
+          useValue: {
+            validateEventData: jest.fn(),
+            validateEventDate: jest.fn(),
+            validateEventTime: jest.fn(),
+          },
+        },
+        {
+          provide: TicketValidator,
+          useValue: {
+            validateTicketTypes: jest.fn(),
+            validateTicketTypesPut: jest.fn(),
+          },
+        },
+        {
+          provide: EventBusinessValidator,
+          useValue: {
+            validateEventForTicketPurchase: jest.fn(),
+            validateTicketTypeAvailability: jest.fn(),
+          },
+        },
+        // Transformers
+        {
+          provide: EventDataTransformer,
+          useValue: {
+            transformCreateEventData: jest.fn().mockImplementation((data) => ({
+              ...data,
+              culturalPlaceId: expect.any(Object),
+              date: new Date(data.date),
+              ticketTypes: data.ticketTypes.map(ticketType => ({
+                ...ticketType,
+                soldQuantity: 0,
+                isActive: ticketType.isActive ?? true
+              }))
+            })),
+            transformEventCoordinates: jest.fn().mockImplementation((event) => event),
+            transformEventsCoordinates: jest.fn().mockImplementation((events) => events),
+          },
+        },
+        // Change Detection
+        {
+          provide: EventChangeDetector,
+          useValue: {
+            detectCriticalChange: jest.fn(),
+            detectStatusChange: jest.fn(),
+          },
+        },
+        {
+          provide: ChangeValueFormatter,
+          useValue: {
+            getChangeValues: jest.fn(),
+          },
+        },
+        {
+          provide: EventChangeNotifier,
+          useValue: {
+            notifyEventChange: jest.fn(),
+            notifyStatusChange: jest.fn(),
+          },
+        },
+        // Ticket Management
+        {
+          provide: TicketAvailabilityService,
+          useValue: {
+            checkTicketAvailability: jest.fn(),
+            getTicketAvailability: jest.fn(),
+          },
+        },
+        {
+          provide: TicketQuantityService,
+          useValue: {
+            updateTicketCount: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],
@@ -140,6 +231,12 @@ describe('EventsService', () => {
         ...createEventDto,
         date: '2020-01-01',
       };
+
+      // Mock the validator to throw an exception
+      const eventValidator = module.get(EventValidator);
+      eventValidator.validateEventData = jest.fn().mockImplementation(() => {
+        throw new BadRequestException('Event date cannot be in the past');
+      });
 
       await expect(service.create(pastDateDto)).rejects.toThrow(BadRequestException);
       expect(repository.create).not.toHaveBeenCalled();
@@ -268,6 +365,12 @@ describe('EventsService', () => {
         ],
       };
 
+      // Mock the ticket validator to throw an exception
+      const ticketValidator = module.get(TicketValidator);
+      ticketValidator.validateTicketTypes = jest.fn().mockImplementation(() => {
+        throw new BadRequestException('Duplicate ticket type: general');
+      });
+
       await expect(service.create(duplicateTicketDto)).rejects.toThrow(BadRequestException);
       expect(repository.create).not.toHaveBeenCalled();
     });
@@ -277,6 +380,12 @@ describe('EventsService', () => {
         ...createEventDto,
         time: '25:00',
       };
+
+      // Mock the event validator to throw an exception
+      const eventValidator = module.get(EventValidator);
+      eventValidator.validateEventData = jest.fn().mockImplementation(() => {
+        throw new BadRequestException('Invalid time format. Use HH:MM format');
+      });
 
       await expect(service.create(invalidTimeDto)).rejects.toThrow(BadRequestException);
       expect(repository.create).not.toHaveBeenCalled();
@@ -409,6 +518,12 @@ describe('EventsService', () => {
       const pastDateDto = { ...putEventDto, date: '2020-01-01' };
       repository.findById.mockResolvedValue(mockEvent);
 
+      // Mock the event validator to throw an exception
+      const eventValidator = module.get(EventValidator);
+      eventValidator.validateEventDate = jest.fn().mockImplementation(() => {
+        throw new BadRequestException('Event date cannot be in the past');
+      });
+
       await expect(service.update('507f1f77bcf86cd799439011', pastDateDto)).rejects.toThrow(BadRequestException);
       expect(repository.update).not.toHaveBeenCalled();
     });
@@ -421,6 +536,12 @@ describe('EventsService', () => {
         ],
       };
       repository.findById.mockResolvedValue(mockEvent);
+
+      // Mock the ticket validator to throw an exception
+      const ticketValidator = module.get(TicketValidator);
+      ticketValidator.validateTicketTypesPut = jest.fn().mockImplementation(() => {
+        throw new BadRequestException('Sold quantity cannot exceed initial quantity');
+      });
 
       await expect(service.update('507f1f77bcf86cd799439011', invalidTicketDto)).rejects.toThrow(BadRequestException);
       expect(repository.update).not.toHaveBeenCalled();
@@ -435,6 +556,12 @@ describe('EventsService', () => {
         ],
       };
       repository.findById.mockResolvedValue(mockEvent);
+
+      // Mock the ticket validator to throw an exception
+      const ticketValidator = module.get(TicketValidator);
+      ticketValidator.validateTicketTypesPut = jest.fn().mockImplementation(() => {
+        throw new BadRequestException('Duplicate ticket type: general');
+      });
 
       await expect(service.update('507f1f77bcf86cd799439011', duplicateTicketDto)).rejects.toThrow(BadRequestException);
       expect(repository.update).not.toHaveBeenCalled();
@@ -509,22 +636,21 @@ describe('EventsService', () => {
       repository.update.mockResolvedValue(updatedEvent);
       eventNotificationService.publishEventChange.mockResolvedValue(undefined);
 
-      // Mock getChangeValues method
-      const getChangeValuesSpy = jest.spyOn(service as any, 'getChangeValues')
-        .mockResolvedValue({ oldValue: '25/12/2024', newValue: '26/12/2024' });
+      // Mock the change notifier
+      const eventChangeNotifier = module.get(EventChangeNotifier);
+      eventChangeNotifier.notifyEventChange.mockResolvedValue(undefined);
 
       const result = await service.update('507f1f77bcf86cd799439011', putEventDtoWithNewDate);
 
       expect(result).toEqual(updatedEvent);
-      expect(getChangeValuesSpy).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), 'date_change');
-      expect(eventNotificationService.publishEventChange).toHaveBeenCalledWith({
-        event: updatedEvent,
-        changeType: 'date_change',
-        oldValue: '25/12/2024',
-        newValue: '26/12/2024',
-      });
-
-      getChangeValuesSpy.mockRestore();
+      expect(eventChangeNotifier.notifyEventChange).toHaveBeenCalledWith(
+        '507f1f77bcf86cd799439011',
+        expect.any(Object),
+        expect.objectContaining({
+          date: expect.any(Date)
+        }),
+        expect.any(Object)
+      );
     });
 
   });
@@ -553,17 +679,19 @@ describe('EventsService', () => {
       
       repository.findById.mockResolvedValue(inactiveEvent);
       repository.toggleActive.mockResolvedValue(activatedEvent);
-      eventNotificationService.publishEventChange.mockResolvedValue(undefined);
+      
+      // Mock the change notifier
+      const eventChangeNotifier = module.get(EventChangeNotifier);
+      eventChangeNotifier.notifyStatusChange.mockResolvedValue(undefined);
 
       const result = await service.toggleActive('507f1f77bcf86cd799439011');
 
       expect(result).toEqual(activatedEvent);
-      expect(eventNotificationService.publishEventChange).toHaveBeenCalledWith({
-        event: activatedEvent,
-        changeType: 'activation',
-        oldValue: 'Inactivo',
-        newValue: 'Activo',
-      });
+      expect(eventChangeNotifier.notifyStatusChange).toHaveBeenCalledWith(
+        '507f1f77bcf86cd799439011',
+        inactiveEvent,
+        activatedEvent
+      );
     });
 
     it('should publish cancellation notification when event becomes inactive', async () => {
@@ -572,17 +700,19 @@ describe('EventsService', () => {
       
       repository.findById.mockResolvedValue(activeEvent);
       repository.toggleActive.mockResolvedValue(cancelledEvent);
-      eventNotificationService.publishEventChange.mockResolvedValue(undefined);
+      
+      // Mock the change notifier
+      const eventChangeNotifier = module.get(EventChangeNotifier);
+      eventChangeNotifier.notifyStatusChange.mockResolvedValue(undefined);
 
       const result = await service.toggleActive('507f1f77bcf86cd799439011');
 
       expect(result).toEqual(cancelledEvent);
-      expect(eventNotificationService.publishEventChange).toHaveBeenCalledWith({
-        event: cancelledEvent,
-        changeType: 'cancellation',
-        oldValue: 'Activo',
-        newValue: 'Inactivo',
-      });
+      expect(eventChangeNotifier.notifyStatusChange).toHaveBeenCalledWith(
+        '507f1f77bcf86cd799439011',
+        activeEvent,
+        cancelledEvent
+      );
     });
 
     it('should not publish notification when status does not change', async () => {
@@ -654,7 +784,25 @@ describe('EventsService', () => {
         }
       };
 
+      const expectedTransformedEvent = {
+        ...eventWithGeoJSONCoordinates,
+        culturalPlaceId: {
+          ...eventWithGeoJSONCoordinates.culturalPlaceId,
+          contact: {
+            ...eventWithGeoJSONCoordinates.culturalPlaceId.contact,
+            coordinates: {
+              lat: -34.61724004,
+              lng: -58.40879856
+            }
+          }
+        }
+      };
+
       repository.findById.mockResolvedValue(eventWithGeoJSONCoordinates);
+      
+      // Mock the transformer to return the transformed event
+      const eventDataTransformer = module.get(EventDataTransformer);
+      eventDataTransformer.transformEventCoordinates.mockReturnValue(expectedTransformedEvent);
 
       const result = await service.findOne('507f1f77bcf86cd799439011');
 
@@ -679,7 +827,25 @@ describe('EventsService', () => {
         }
       }];
 
+      const expectedTransformedEvents = [{
+        ...eventsWithGeoJSONCoordinates[0],
+        culturalPlaceId: {
+          ...eventsWithGeoJSONCoordinates[0].culturalPlaceId,
+          contact: {
+            ...eventsWithGeoJSONCoordinates[0].culturalPlaceId.contact,
+            coordinates: {
+              lat: -34.61724004,
+              lng: -58.40879856
+            }
+          }
+        }
+      }];
+
       repository.findAll.mockResolvedValue(eventsWithGeoJSONCoordinates);
+      
+      // Mock the transformer to return the transformed events
+      const eventDataTransformer = module.get(EventDataTransformer);
+      eventDataTransformer.transformEventsCoordinates.mockReturnValue(expectedTransformedEvents);
 
       const result = await service.findAll();
 
@@ -704,7 +870,25 @@ describe('EventsService', () => {
         }
       }];
 
+      const expectedTransformedEvents = [{
+        ...eventsWithGeoJSONCoordinates[0],
+        culturalPlaceId: {
+          ...eventsWithGeoJSONCoordinates[0].culturalPlaceId,
+          contact: {
+            ...eventsWithGeoJSONCoordinates[0].culturalPlaceId.contact,
+            coordinates: {
+              lat: -34.61724004,
+              lng: -58.40879856
+            }
+          }
+        }
+      }];
+
       repository.findByCulturalPlace.mockResolvedValue(eventsWithGeoJSONCoordinates);
+      
+      // Mock the transformer to return the transformed events
+      const eventDataTransformer = module.get(EventDataTransformer);
+      eventDataTransformer.transformEventsCoordinates.mockReturnValue(expectedTransformedEvents);
 
       const result = await service.findByCulturalPlace('507f1f77bcf86cd799439012');
 
@@ -764,166 +948,22 @@ describe('EventsService', () => {
 
   describe('updateTicketCount', () => {
     it('should update ticket count successfully', async () => {
-      repository.updateTicketCount.mockResolvedValue(true);
+      const ticketQuantityService = module.get(TicketQuantityService);
+      ticketQuantityService.updateTicketCount.mockResolvedValue(undefined);
 
       await service.updateTicketCount('507f1f77bcf86cd799439011', 'general', 5);
 
-      expect(repository.updateTicketCount).toHaveBeenCalledWith('507f1f77bcf86cd799439011', 'general', 5);
+      expect(ticketQuantityService.updateTicketCount).toHaveBeenCalledWith('507f1f77bcf86cd799439011', 'general', 5);
     });
 
     it('should throw BadRequestException when update fails', async () => {
-      repository.updateTicketCount.mockResolvedValue(false);
+      const ticketQuantityService = module.get(TicketQuantityService);
+      ticketQuantityService.updateTicketCount.mockRejectedValue(new BadRequestException('Failed to update ticket count'));
 
       await expect(service.updateTicketCount('507f1f77bcf86cd799439011', 'general', 5))
         .rejects.toThrow(BadRequestException);
     });
   });
 
-  describe('detectCriticalChange', () => {
-    it('should detect location change', () => {
-      const originalEvent = { culturalPlaceId: 'old-place-id' };
-      const updateData = { culturalPlaceId: 'new-place-id' };
 
-      const result = (service as any).detectCriticalChange(originalEvent, updateData);
-
-      expect(result).toBe('location_change');
-    });
-
-    it('should detect date change', () => {
-      const originalEvent = { date: '2024-12-25' };
-      const updateData = { date: '2024-12-26' };
-
-      const result = (service as any).detectCriticalChange(originalEvent, updateData);
-
-      expect(result).toBe('date_change');
-    });
-
-    it('should detect time change', () => {
-      const originalEvent = { time: '20:00' };
-      const updateData = { time: '21:00' };
-
-      const result = (service as any).detectCriticalChange(originalEvent, updateData);
-
-      expect(result).toBe('time_change');
-    });
-
-    it('should detect date_time_change when both date and time change', () => {
-      const originalEvent = { date: '2024-12-25', time: '20:00' };
-      const updateData = { date: '2024-12-26', time: '21:00' };
-
-      const result = (service as any).detectCriticalChange(originalEvent, updateData);
-
-      expect(result).toBe('date_time_change');
-    });
-
-    it('should return null when no critical change detected', () => {
-      const originalEvent = { name: 'Event', description: 'Description' };
-      const updateData = { name: 'Updated Event' };
-
-      const result = (service as any).detectCriticalChange(originalEvent, updateData);
-
-      expect(result).toBe(null);
-    });
-  });
-
-  describe('getChangeValues', () => {
-    it('should return location change values', async () => {
-      const originalEvent = { culturalPlaceId: { name: 'Old Place' } };
-      const updatedEvent = { culturalPlaceId: { name: 'New Place' } };
-
-      const result = await (service as any).getChangeValues(originalEvent, updatedEvent, 'location_change');
-
-      expect(result).toEqual({
-        oldValue: 'Old Place',
-        newValue: 'New Place',
-      });
-    });
-
-    it('should return N/A for location change when names are not available', async () => {
-      const originalEvent = { culturalPlaceId: {} };
-      const updatedEvent = { culturalPlaceId: {} };
-
-      const result = await (service as any).getChangeValues(originalEvent, updatedEvent, 'location_change');
-
-      expect(result).toEqual({
-        oldValue: 'N/A',
-        newValue: 'N/A',
-      });
-    });
-
-    it('should return formatted date change values', async () => {
-      const originalEvent = { date: new Date('2024-12-25T00:00:00.000Z') };
-      const updatedEvent = { date: new Date('2024-12-26T00:00:00.000Z') };
-
-      const result = await (service as any).getChangeValues(originalEvent, updatedEvent, 'date_change');
-
-      expect(result.oldValue).toMatch(/\d{2}\/\d{2}\/\d{4}/);
-      expect(result.newValue).toMatch(/\d{2}\/\d{2}\/\d{4}/);
-      expect(result.oldValue).not.toBe(result.newValue);
-    });
-
-    it('should handle date change with string dates', async () => {
-      const originalEvent = { date: '2024-12-25T00:00:00.000Z' };
-      const updatedEvent = { date: '2024-12-26T00:00:00.000Z' };
-
-      const result = await (service as any).getChangeValues(originalEvent, updatedEvent, 'date_change');
-
-      expect(result.oldValue).toMatch(/\d{2}\/\d{2}\/\d{4}/);
-      expect(result.newValue).toMatch(/\d{2}\/\d{2}\/\d{4}/);
-      expect(result.oldValue).not.toBe(result.newValue);
-    });
-
-    it('should handle invalid dates in date change', async () => {
-      const originalEvent = { date: 'invalid-date' };
-      const updatedEvent = { date: '2024-12-26T00:00:00.000Z' };
-
-      const result = await (service as any).getChangeValues(originalEvent, updatedEvent, 'date_change');
-
-      expect(result.oldValue).toContain('Fecha inválida');
-      expect(result.newValue).toMatch(/\d{2}\/\d{2}\/\d{4}/);
-    });
-
-    it('should handle date parsing errors in date change', async () => {
-      const originalEvent = { date: { toString: () => 'invalid' } };
-      const updatedEvent = { date: '2024-12-26T00:00:00.000Z' };
-
-      const result = await (service as any).getChangeValues(originalEvent, updatedEvent, 'date_change');
-
-      expect(result.oldValue).toContain('Fecha inválida');
-      expect(result.newValue).toMatch(/\d{2}\/\d{2}\/\d{4}/);
-    });
-
-    it('should return formatted date_time_change values', async () => {
-      const originalEvent = { date: new Date('2024-12-25T00:00:00.000Z'), time: '20:00' };
-      const updatedEvent = { date: new Date('2024-12-26T00:00:00.000Z'), time: '21:00' };
-
-      const result = await (service as any).getChangeValues(originalEvent, updatedEvent, 'date_time_change');
-
-      expect(result.oldValue).toMatch(/\d{2}\/\d{2}\/\d{4} a las 20:00/);
-      expect(result.newValue).toMatch(/\d{2}\/\d{2}\/\d{4} a las 21:00/);
-      expect(result.oldValue).not.toBe(result.newValue);
-    });
-
-    it('should handle invalid dates in date_time_change', async () => {
-      const originalEvent = { date: 'invalid-date', time: '20:00' };
-      const updatedEvent = { date: '2024-12-26T00:00:00.000Z', time: '21:00' };
-
-      const result = await (service as any).getChangeValues(originalEvent, updatedEvent, 'date_time_change');
-
-      expect(result.oldValue).toContain('Fecha inválida');
-      expect(result.newValue).toMatch(/\d{2}\/\d{2}\/\d{4} a las 21:00/);
-    });
-
-    it('should return time change values', async () => {
-      const originalEvent = { time: '20:00' };
-      const updatedEvent = { time: '21:00' };
-
-      const result = await (service as any).getChangeValues(originalEvent, updatedEvent, 'time_change');
-
-      expect(result).toEqual({
-        oldValue: '20:00',
-        newValue: '21:00',
-      });
-    });
-  });
 });

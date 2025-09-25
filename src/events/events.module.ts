@@ -8,6 +8,23 @@ import { MongoDBEventRepository } from './repositories/mongodb-event.repository'
 import { EventInventoryService } from './event-inventory.service';
 import { NotificationsModule } from '../notifications/notifications.module';
 
+// Validators
+import { EventValidator } from './validators/event.validator';
+import { TicketValidator } from './validators/ticket.validator';
+import { EventBusinessValidator } from './validators/event-business.validator';
+
+// Transformers
+import { EventDataTransformer } from './transformers/event-data.transformer';
+
+// Change Detection
+import { EventChangeDetector } from './change-detection/event-change-detector.service';
+import { ChangeValueFormatter } from './change-detection/change-value-formatter.service';
+import { EventChangeNotifier } from './change-detection/event-change-notifier.service';
+
+// Ticket Management
+import { TicketAvailabilityService } from './ticket-management/ticket-availability.service';
+import { TicketQuantityService } from './ticket-management/ticket-quantity.service';
+
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -23,6 +40,19 @@ import { NotificationsModule } from '../notifications/notifications.module';
       provide: EVENT_REPOSITORY,
       useClass: MongoDBEventRepository,
     },
+    // Validators
+    EventValidator,
+    TicketValidator,
+    EventBusinessValidator,
+    // Transformers
+    EventDataTransformer,
+    // Change Detection
+    EventChangeDetector,
+    ChangeValueFormatter,
+    EventChangeNotifier,
+    // Ticket Management
+    TicketAvailabilityService,
+    TicketQuantityService,
   ],
   exports: [EventsService, EventInventoryService],
 })

@@ -7,9 +7,19 @@ import { EventInactiveException } from '../../common/exceptions/event-inactive.e
 import { EventExpiredException } from '../../common/exceptions/event-expired.exception';
 import { EventNotificationService } from '../../notifications/event-notification.service';
 
+// Import the new services
+import { EventValidator } from '../validators/event.validator';
+import { TicketValidator } from '../validators/ticket.validator';
+import { EventBusinessValidator } from '../validators/event-business.validator';
+import { EventDataTransformer } from '../transformers/event-data.transformer';
+import { EventChangeNotifier } from '../change-detection/event-change-notifier.service';
+import { TicketAvailabilityService } from '../ticket-management/ticket-availability.service';
+import { TicketQuantityService } from '../ticket-management/ticket-quantity.service';
+
 describe('EventsService Validation Tests', () => {
   let service: EventsService;
   let mockEventRepository: any;
+  let module: TestingModule;
 
   const mockEvent = {
     _id: '507f1f77bcf86cd799439011',
@@ -64,7 +74,7 @@ describe('EventsService Validation Tests', () => {
       findActiveEvents: jest.fn(),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
+    module = await Test.createTestingModule({
       providers: [
         EventsService,
         {
@@ -77,6 +87,56 @@ describe('EventsService Validation Tests', () => {
             publishEventChange: jest.fn(),
           },
         },
+        // Mock the new services
+        {
+          provide: EventValidator,
+          useValue: {
+            validateEventData: jest.fn(),
+            validateEventDate: jest.fn(),
+            validateEventTime: jest.fn(),
+          },
+        },
+        {
+          provide: TicketValidator,
+          useValue: {
+            validateTicketTypes: jest.fn(),
+            validateTicketTypesPut: jest.fn(),
+          },
+        },
+        {
+          provide: EventBusinessValidator,
+          useValue: {
+            validateEventForTicketPurchase: jest.fn(),
+          },
+        },
+        {
+          provide: EventDataTransformer,
+          useValue: {
+            transformCreateEventData: jest.fn(),
+            transformEventCoordinates: jest.fn(),
+            transformEventsCoordinates: jest.fn(),
+          },
+        },
+        {
+          provide: EventChangeNotifier,
+          useValue: {
+            notifyEventChange: jest.fn(),
+            notifyStatusChange: jest.fn(),
+          },
+        },
+        {
+          provide: TicketAvailabilityService,
+          useValue: {
+            checkTicketAvailability: jest.fn(),
+            getTicketAvailability: jest.fn(),
+          },
+        },
+        {
+          provide: TicketQuantityService,
+          useValue: {
+            updateTicketCount: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -85,7 +145,8 @@ describe('EventsService Validation Tests', () => {
 
   describe('validateEventForTicketPurchase', () => {
     it('should throw EventNotFoundException when event does not exist', async () => {
-      mockEventRepository.findById.mockResolvedValue(null);
+      const eventBusinessValidator = module.get(EventBusinessValidator);
+      eventBusinessValidator.validateEventForTicketPurchase.mockRejectedValue(new EventNotFoundException('Event not found'));
 
       await expect(service.validateEventForTicketPurchase('507f1f77bcf86cd799439011')).rejects.toThrow(
         EventNotFoundException
@@ -93,7 +154,8 @@ describe('EventsService Validation Tests', () => {
     });
 
     it('should throw EventInactiveException when event is not active', async () => {
-      mockEventRepository.findById.mockResolvedValue(mockInactiveEvent);
+      const eventBusinessValidator = module.get(EventBusinessValidator);
+      eventBusinessValidator.validateEventForTicketPurchase.mockRejectedValue(new EventInactiveException('Event is not active'));
 
       await expect(service.validateEventForTicketPurchase('507f1f77bcf86cd799439011')).rejects.toThrow(
         EventInactiveException
@@ -101,14 +163,16 @@ describe('EventsService Validation Tests', () => {
     });
 
     it('should return event when event date has passed (no date validation)', async () => {
-      mockEventRepository.findById.mockResolvedValue(mockExpiredEvent);
+      const eventBusinessValidator = module.get(EventBusinessValidator);
+      eventBusinessValidator.validateEventForTicketPurchase.mockResolvedValue(mockExpiredEvent);
 
       const result = await service.validateEventForTicketPurchase('507f1f77bcf86cd799439011');
       expect(result).toEqual(mockExpiredEvent);
     });
 
     it('should return event when all validations pass', async () => {
-      mockEventRepository.findById.mockResolvedValue(mockEvent);
+      const eventBusinessValidator = module.get(EventBusinessValidator);
+      eventBusinessValidator.validateEventForTicketPurchase.mockResolvedValue(mockEvent);
 
       const result = await service.validateEventForTicketPurchase('507f1f77bcf86cd799439011');
 
@@ -122,37 +186,35 @@ describe('EventsService Validation Tests', () => {
     });
 
     it('should return true when enough tickets are available', async () => {
+      const ticketAvailabilityService = module.get(TicketAvailabilityService);
+      ticketAvailabilityService.checkTicketAvailability.mockResolvedValue(true);
+
       const result = await service.checkTicketAvailability('507f1f77bcf86cd799439011', 'general', 3);
 
       expect(result).toBe(true);
     });
 
     it('should return false when not enough tickets are available', async () => {
+      const ticketAvailabilityService = module.get(TicketAvailabilityService);
+      ticketAvailabilityService.checkTicketAvailability.mockResolvedValue(false);
+
       const result = await service.checkTicketAvailability('507f1f77bcf86cd799439011', 'general', 10);
 
       expect(result).toBe(false);
     });
 
     it('should throw BadRequestException when ticket type does not exist', async () => {
+      const ticketAvailabilityService = module.get(TicketAvailabilityService);
+      ticketAvailabilityService.checkTicketAvailability.mockRejectedValue(new BadRequestException('Ticket type does not exist'));
+
       await expect(service.checkTicketAvailability('507f1f77bcf86cd799439011', 'invalid', 1)).rejects.toThrow(
         BadRequestException
       );
     });
 
     it('should throw BadRequestException when ticket type is not active', async () => {
-      const eventWithInactiveTicket = {
-        ...mockEvent,
-        ticketTypes: [
-          {
-            type: 'general',
-            price: 1000,
-            initialQuantity: 10,
-            soldQuantity: 5,
-            isActive: false
-          }
-        ]
-      };
-      mockEventRepository.findById.mockResolvedValue(eventWithInactiveTicket);
+      const ticketAvailabilityService = module.get(TicketAvailabilityService);
+      ticketAvailabilityService.checkTicketAvailability.mockRejectedValue(new BadRequestException('Ticket type is not active'));
 
       await expect(service.checkTicketAvailability('507f1f77bcf86cd799439011', 'general', 1)).rejects.toThrow(
         BadRequestException
@@ -166,18 +228,27 @@ describe('EventsService Validation Tests', () => {
     });
 
     it('should return correct available quantity', async () => {
+      const ticketAvailabilityService = module.get(TicketAvailabilityService);
+      ticketAvailabilityService.getTicketAvailability.mockResolvedValue(5);
+
       const result = await service.getTicketAvailability('507f1f77bcf86cd799439011', 'general');
 
       expect(result).toBe(5); // 10 - 5
     });
 
     it('should return correct available quantity for vip tickets', async () => {
+      const ticketAvailabilityService = module.get(TicketAvailabilityService);
+      ticketAvailabilityService.getTicketAvailability.mockResolvedValue(3);
+
       const result = await service.getTicketAvailability('507f1f77bcf86cd799439011', 'vip');
 
       expect(result).toBe(3); // 5 - 2
     });
 
     it('should throw BadRequestException when ticket type does not exist', async () => {
+      const ticketAvailabilityService = module.get(TicketAvailabilityService);
+      ticketAvailabilityService.getTicketAvailability.mockRejectedValue(new BadRequestException('Ticket type does not exist'));
+
       await expect(service.getTicketAvailability('507f1f77bcf86cd799439011', 'invalid')).rejects.toThrow(
         BadRequestException
       );
@@ -186,6 +257,25 @@ describe('EventsService Validation Tests', () => {
 
   describe('Event Creation with Optional Image', () => {
     it('should create event without image field', async () => {
+      const eventDataTransformer = module.get(EventDataTransformer);
+      eventDataTransformer.transformCreateEventData.mockReturnValue({
+        name: 'Test Event',
+        description: 'Test Description',
+        date: new Date('2025-12-25'),
+        time: '18:00',
+        culturalPlaceId: '507f1f77bcf86cd799439011',
+        ticketTypes: [
+          {
+            type: 'general',
+            price: 1000,
+            initialQuantity: 10,
+            soldQuantity: 0,
+            isActive: true
+          }
+        ],
+        isActive: true
+      });
+
       mockEventRepository.create.mockResolvedValue(mockEventWithoutImage);
 
       const result = await service.create({
@@ -209,12 +299,31 @@ describe('EventsService Validation Tests', () => {
         expect.objectContaining({
           name: 'Test Event',
           description: 'Test Description',
-          // image no debe estar presente o debe ser undefined
         })
       );
     });
 
     it('should create event with image field when provided', async () => {
+      const eventDataTransformer = module.get(EventDataTransformer);
+      eventDataTransformer.transformCreateEventData.mockReturnValue({
+        name: 'Test Event',
+        description: 'Test Description',
+        date: new Date('2025-12-25'),
+        time: '18:00',
+        culturalPlaceId: '507f1f77bcf86cd799439011',
+        image: 'https://example.com/image.jpg',
+        ticketTypes: [
+          {
+            type: 'general',
+            price: 1000,
+            initialQuantity: 10,
+            soldQuantity: 0,
+            isActive: true
+          }
+        ],
+        isActive: true
+      });
+
       const eventWithImage = { ...mockEventWithoutImage, image: 'https://example.com/image.jpg' };
       mockEventRepository.create.mockResolvedValue(eventWithImage);
 
