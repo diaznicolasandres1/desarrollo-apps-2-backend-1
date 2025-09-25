@@ -252,6 +252,195 @@ describe('EmailService', () => {
     });
   });
 
+  describe('sendMultipleEventConfirmationEmails', () => {
+    it('should send separate emails for different events', async () => {
+      const mockTickets = [
+        {
+          _id: '507f1f77bcf86cd799439011',
+          eventId: { toString: () => '507f1f77bcf86cd799439012' },
+          ticketType: 'general',
+          price: 1000,
+          qrCode: 'data:image/png;base64,test1',
+        },
+        {
+          _id: '507f1f77bcf86cd799439013',
+          eventId: { toString: () => '507f1f77bcf86cd799439014' },
+          ticketType: 'vip',
+          price: 2000,
+          qrCode: 'data:image/png;base64,test2',
+        },
+      ];
+
+      const mockEvent1 = {
+        _id: '507f1f77bcf86cd799439012',
+        name: 'Event 1',
+        description: 'Test Description 1',
+        date: '2025-12-31T20:00:00.000Z',
+        time: '20:00',
+      };
+
+      const mockEvent2 = {
+        _id: '507f1f77bcf86cd799439014',
+        name: 'Event 2',
+        description: 'Test Description 2',
+        date: '2025-12-30T19:00:00.000Z',
+        time: '19:00',
+      };
+
+      const getEventData = jest.fn()
+        .mockResolvedValueOnce(mockEvent1)
+        .mockResolvedValueOnce(mockEvent2);
+
+      emailTemplateService.generateTicketConfirmationHTML.mockReturnValue('<html>Test HTML</html>');
+      emailAttachmentService.createQRAttachments.mockReturnValue([]);
+      emailSenderService.sendEmail.mockResolvedValue(true);
+
+      await service.sendMultipleEventConfirmationEmails(
+        mockTickets,
+        'test@example.com',
+        'Test User',
+        getEventData
+      );
+
+      expect(getEventData).toHaveBeenCalledTimes(2);
+      expect(getEventData).toHaveBeenCalledWith('507f1f77bcf86cd799439012');
+      expect(getEventData).toHaveBeenCalledWith('507f1f77bcf86cd799439014');
+      expect(emailSenderService.sendEmail).toHaveBeenCalledTimes(2);
+      expect(emailTemplateService.generateTicketConfirmationHTML).toHaveBeenCalledTimes(2);
+    });
+
+    it('should group tickets by event correctly', async () => {
+      const mockTickets = [
+        {
+          _id: '507f1f77bcf86cd799439011',
+          eventId: { toString: () => '507f1f77bcf86cd799439012' },
+          ticketType: 'general',
+          price: 1000,
+          qrCode: 'data:image/png;base64,test1',
+        },
+        {
+          _id: '507f1f77bcf86cd799439013',
+          eventId: { toString: () => '507f1f77bcf86cd799439012' },
+          ticketType: 'vip',
+          price: 2000,
+          qrCode: 'data:image/png;base64,test2',
+        },
+        {
+          _id: '507f1f77bcf86cd799439014',
+          eventId: { toString: () => '507f1f77bcf86cd799439015' },
+          ticketType: 'general',
+          price: 1500,
+          qrCode: 'data:image/png;base64,test3',
+        },
+      ];
+
+      const mockEvent1 = {
+        _id: '507f1f77bcf86cd799439012',
+        name: 'Event 1',
+        description: 'Test Description 1',
+        date: '2025-12-31T20:00:00.000Z',
+        time: '20:00',
+      };
+
+      const mockEvent2 = {
+        _id: '507f1f77bcf86cd799439015',
+        name: 'Event 2',
+        description: 'Test Description 2',
+        date: '2025-12-30T19:00:00.000Z',
+        time: '19:00',
+      };
+
+      const getEventData = jest.fn()
+        .mockResolvedValueOnce(mockEvent1)
+        .mockResolvedValueOnce(mockEvent2);
+
+      emailTemplateService.generateTicketConfirmationHTML.mockReturnValue('<html>Test HTML</html>');
+      emailAttachmentService.createQRAttachments.mockReturnValue([]);
+      emailSenderService.sendEmail.mockResolvedValue(true);
+
+      await service.sendMultipleEventConfirmationEmails(
+        mockTickets,
+        'test@example.com',
+        'Test User',
+        getEventData
+      );
+
+      // Should call generateTicketConfirmationHTML with correct data for each event
+      expect(emailTemplateService.generateTicketConfirmationHTML).toHaveBeenCalledWith({
+        userEmail: 'test@example.com',
+        userName: 'Test User',
+        event: mockEvent1,
+        tickets: [mockTickets[0], mockTickets[1]], // First two tickets for Event 1
+        totalAmount: 3000, // 1000 + 2000
+      });
+
+      expect(emailTemplateService.generateTicketConfirmationHTML).toHaveBeenCalledWith({
+        userEmail: 'test@example.com',
+        userName: 'Test User',
+        event: mockEvent2,
+        tickets: [mockTickets[2]], // Third ticket for Event 2
+        totalAmount: 1500,
+      });
+    });
+
+    it('should handle errors gracefully and continue with other events', async () => {
+      const mockTickets = [
+        {
+          _id: '507f1f77bcf86cd799439011',
+          eventId: { toString: () => '507f1f77bcf86cd799439012' },
+          ticketType: 'general',
+          price: 1000,
+          qrCode: 'data:image/png;base64,test1',
+        },
+        {
+          _id: '507f1f77bcf86cd799439013',
+          eventId: { toString: () => '507f1f77bcf86cd799439014' },
+          ticketType: 'vip',
+          price: 2000,
+          qrCode: 'data:image/png;base64,test2',
+        },
+      ];
+
+      const mockEvent1 = {
+        _id: '507f1f77bcf86cd799439012',
+        name: 'Event 1',
+        description: 'Test Description 1',
+        date: '2025-12-31T20:00:00.000Z',
+        time: '20:00',
+      };
+
+      const mockEvent2 = {
+        _id: '507f1f77bcf86cd799439014',
+        name: 'Event 2',
+        description: 'Test Description 2',
+        date: '2025-12-30T19:00:00.000Z',
+        time: '19:00',
+      };
+
+      const getEventData = jest.fn()
+        .mockResolvedValueOnce(mockEvent1)
+        .mockResolvedValueOnce(mockEvent2);
+
+      emailTemplateService.generateTicketConfirmationHTML.mockReturnValue('<html>Test HTML</html>');
+      emailAttachmentService.createQRAttachments.mockReturnValue([]);
+      
+      // First email succeeds, second fails
+      emailSenderService.sendEmail
+        .mockResolvedValueOnce(true)
+        .mockRejectedValueOnce(new Error('Email failed'));
+
+      // Should not throw error
+      await expect(service.sendMultipleEventConfirmationEmails(
+        mockTickets,
+        'test@example.com',
+        'Test User',
+        getEventData
+      )).resolves.not.toThrow();
+
+      expect(emailSenderService.sendEmail).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe('sendEmail', () => {
     it('should send email successfully', async () => {
       emailSenderService.sendEmail.mockResolvedValue(true);
