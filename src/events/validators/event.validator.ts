@@ -7,18 +7,7 @@ export class EventValidator {
    * Valida los datos de un evento completo
    */
   validateEventData(createEventDto: CreateEventDto): void {
-    this.validateEventDate(new Date(createEventDto.date));
     this.validateEventTime(createEventDto.time);
-  }
-
-  /**
-   * Valida que la fecha del evento no sea en el pasado
-   */
-  validateEventDate(date: Date): void {
-    const now = new Date();
-    if (date < now) {
-      throw new BadRequestException('Event date cannot be in the past');
-    }
   }
 
   /**

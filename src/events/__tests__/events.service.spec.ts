@@ -100,7 +100,6 @@ describe('EventsService', () => {
           provide: EventValidator,
           useValue: {
             validateEventData: jest.fn(),
-            validateEventDate: jest.fn(),
             validateEventTime: jest.fn(),
           },
         },
@@ -201,21 +200,6 @@ describe('EventsService', () => {
       });
     });
 
-    it('should throw BadRequestException for past date', async () => {
-      const pastDateDto = {
-        ...createEventDto,
-        date: '2020-01-01',
-      };
-
-      // Mock the validator to throw an exception
-      const eventValidator = module.get(EventValidator);
-      eventValidator.validateEventData = jest.fn().mockImplementation(() => {
-        throw new BadRequestException('Event date cannot be in the past');
-      });
-
-      await expect(service.create(pastDateDto)).rejects.toThrow(BadRequestException);
-      expect(repository.create).not.toHaveBeenCalled();
-    });
 
     it('should create event with custom ticket type successfully', async () => {
       const customTicketDto = {
