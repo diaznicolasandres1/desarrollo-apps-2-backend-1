@@ -33,7 +33,7 @@ export class EmailService {
   async sendTicketConfirmationEmail(data: TicketPurchaseEmailData): Promise<boolean> {
     this.logger.log(`Sending ticket confirmation email to: ${data.userEmail}`);
     
-    const subject = `Reservation Confirmation - ${data.event.name}`;
+    const subject = `Confirmación de compra de tickets - ${data.event.name}`;
     const html = this.emailTemplateService.generateTicketConfirmationHTML(data);
     const attachments = this.emailAttachmentService.createQRAttachments(data.tickets);
 
