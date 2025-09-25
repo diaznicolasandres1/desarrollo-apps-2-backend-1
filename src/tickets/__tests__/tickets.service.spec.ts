@@ -75,6 +75,7 @@ describe('TicketsService', () => {
           provide: EmailService,
           useValue: {
             sendTicketConfirmationEmail: jest.fn(),
+            sendMultipleEventConfirmationEmails: jest.fn(),
           },
         },
       ],
@@ -819,17 +820,43 @@ describe('TicketsService', () => {
       eventInventoryService.validateEventForTicketPurchase.mockResolvedValue(mockEvent);
       eventInventoryService.checkTicketAvailability.mockResolvedValue(true);
       eventInventoryService.updateTicketCount.mockResolvedValue(undefined);
-      repository.create.mockResolvedValue(mockTicket);
+      
+      // Mock repository.create to return different tickets for each call
+      repository.create.mockImplementation((ticketData) => {
+        return Promise.resolve({
+          ...mockTicket,
+          ...ticketData,
+          _id: `507f1f77bcf86cd7994390${Math.random().toString(36).substr(2, 2)}`,
+        });
+      });
     });
 
     it('should purchase multiple tickets successfully', async () => {
+      const mockUser = {
+        _id: '507f1f77bcf86cd799439013',
+        name: 'Test User',
+        email: 'test@example.com',
+      };
+
+      userService.findOne.mockResolvedValue(mockUser);
+      emailService.sendMultipleEventConfirmationEmails.mockResolvedValue(undefined);
+
       const result = await service.purchaseMultipleTickets(purchaseMultipleTicketsDto);
 
       expect(result).toHaveLength(3);
-      expect(eventInventoryService.validateEventForTicketPurchase).toHaveBeenCalledTimes(3); // 2 calls during processing + 1 for email
+      expect(eventInventoryService.validateEventForTicketPurchase).toHaveBeenCalledTimes(2); // Only during processing
       expect(eventInventoryService.checkTicketAvailability).toHaveBeenCalledTimes(2);
       expect(repository.create).toHaveBeenCalledTimes(3);
       expect(eventInventoryService.updateTicketCount).toHaveBeenCalledTimes(2);
+      expect(emailService.sendMultipleEventConfirmationEmails).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ ticketType: 'general' }),
+          expect.objectContaining({ ticketType: 'vip' })
+        ]),
+        'test@example.com',
+        'Test User',
+        expect.any(Function)
+      );
     });
 
     it('should throw error when no tickets provided', async () => {
@@ -940,7 +967,7 @@ describe('TicketsService', () => {
       };
 
       userService.findOne.mockResolvedValue(mockUser);
-      emailService.sendTicketConfirmationEmail.mockRejectedValue(new Error('Email failed'));
+      emailService.sendMultipleEventConfirmationEmails.mockRejectedValue(new Error('Email failed'));
 
       const result = await service.purchaseMultipleTickets(purchaseMultipleTicketsDto);
 
@@ -950,6 +977,15 @@ describe('TicketsService', () => {
     });
 
     it('should create tickets with correct data structure', async () => {
+      const mockUser = {
+        _id: '507f1f77bcf86cd799439013',
+        name: 'Test User',
+        email: 'test@example.com',
+      };
+
+      userService.findOne.mockResolvedValue(mockUser);
+      emailService.sendMultipleEventConfirmationEmails.mockResolvedValue(undefined);
+
       await service.purchaseMultipleTickets(purchaseMultipleTicketsDto);
 
       expect(repository.create).toHaveBeenCalledWith({
@@ -967,6 +1003,69 @@ describe('TicketsService', () => {
         price: 2000,
         status: 'active'
       });
+    });
+
+    it('should handle multiple events correctly', async () => {
+      const mockEvent1 = {
+        _id: '507f1f77bcf86cd799439012',
+        name: 'Event 1',
+        ticketTypes: [
+          { type: 'general', price: 1000, available: 10 }
+        ]
+      };
+
+      const mockEvent2 = {
+        _id: '507f1f77bcf86cd799439014',
+        name: 'Event 2',
+        ticketTypes: [
+          { type: 'vip', price: 2000, available: 5 }
+        ]
+      };
+
+      const multipleEventsDto: PurchaseMultipleTicketsDto = {
+        tickets: [
+          {
+            eventId: '507f1f77bcf86cd799439012',
+            userId: '507f1f77bcf86cd799439013',
+            type: 'general',
+            quantity: 1
+          },
+          {
+            eventId: '507f1f77bcf86cd799439014',
+            userId: '507f1f77bcf86cd799439013',
+            type: 'vip',
+            quantity: 1
+          }
+        ]
+      };
+
+      const mockUser = {
+        _id: '507f1f77bcf86cd799439013',
+        name: 'Test User',
+        email: 'test@example.com',
+      };
+
+      // Mock different events for different calls
+      eventInventoryService.validateEventForTicketPurchase
+        .mockResolvedValueOnce(mockEvent1)
+        .mockResolvedValueOnce(mockEvent2);
+      
+      userService.findOne.mockResolvedValue(mockUser);
+      emailService.sendMultipleEventConfirmationEmails.mockResolvedValue(undefined);
+
+      const result = await service.purchaseMultipleTickets(multipleEventsDto);
+
+      expect(result).toHaveLength(2);
+      expect(eventInventoryService.validateEventForTicketPurchase).toHaveBeenCalledTimes(2);
+      expect(emailService.sendMultipleEventConfirmationEmails).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ ticketType: 'general' }),
+          expect.objectContaining({ ticketType: 'vip' })
+        ]),
+        'test@example.com',
+        'Test User',
+        expect.any(Function)
+      );
     });
   });
 

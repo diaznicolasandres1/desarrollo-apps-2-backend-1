@@ -95,15 +95,13 @@ export class TicketsService {
 
     const allCreatedTickets: Ticket[] = [];
     let userId: string | null = null;
-    let eventId: string | null = null;
 
     // Process each ticket request
     for (const ticketRequest of ticketRequests) {
       const { eventId: currentEventId, userId: currentUserId, type: ticketType, quantity } = ticketRequest;
 
-      // Set userId and eventId from first request (assuming all tickets are for same user and event)
+      // Set userId from first request (assuming all tickets are for same user)
       if (userId === null) userId = currentUserId;
-      if (eventId === null) eventId = currentEventId;
 
       // Validate quantity for individual request
       if (quantity < 1 || quantity > 10) {
@@ -145,12 +143,19 @@ export class TicketsService {
       await this.eventInventoryService.updateTicketCount(currentEventId, ticketType, quantity);
     }
 
-    // Send confirmation email with all tickets
+    // Group tickets by event and send separate emails for each event
     try {
-      const event = await this.eventInventoryService.validateEventForTicketPurchase(eventId!);
-      await this.sendTicketConfirmationEmail(allCreatedTickets, event, userId!);
+      const user = await this.userService.findOne(userId!);
+      if (user) {
+        await this.emailService.sendMultipleEventConfirmationEmails(
+          allCreatedTickets,
+          user.email,
+          user.name,
+          (eventId: string) => this.eventInventoryService.validateEventForTicketPurchase(eventId)
+        );
+      }
     } catch (error) {
-      this.logger.error('Error al enviar email de confirmación:', error);
+      this.logger.error('Error al enviar emails de confirmación:', error);
       // No lanzamos el error para no interrumpir la compra si el email falla
     }
 

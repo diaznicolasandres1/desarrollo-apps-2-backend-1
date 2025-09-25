@@ -45,6 +45,65 @@ export class EmailService {
   }
 
   /**
+   * Envía emails de confirmación agrupados por evento
+   * Útil para compras múltiples que incluyen tickets de diferentes eventos
+   */
+  async sendMultipleEventConfirmationEmails(
+    tickets: any[],
+    userEmail: string,
+    userName: string,
+    getEventData: (eventId: string) => Promise<any>
+  ): Promise<void> {
+    try {
+      // Agrupar tickets por evento
+      const ticketsByEvent = new Map<string, any[]>();
+      
+      for (const ticket of tickets) {
+        const eventId = ticket.eventId.toString();
+        if (!ticketsByEvent.has(eventId)) {
+          ticketsByEvent.set(eventId, []);
+        }
+        ticketsByEvent.get(eventId)!.push(ticket);
+      }
+
+      // Enviar un email por cada evento
+      for (const [eventId, eventTickets] of ticketsByEvent) {
+        try {
+          // Obtener datos del evento
+          const event = await getEventData(eventId);
+          
+          // Calcular el total para este evento
+          const totalAmount = eventTickets.reduce((sum, ticket) => sum + ticket.price, 0);
+
+          // Preparar datos para el email
+          const emailData = {
+            userEmail,
+            userName,
+            event,
+            tickets: eventTickets,
+            totalAmount,
+          };
+
+          // Enviar email
+          const emailSent = await this.sendTicketConfirmationEmail(emailData);
+          
+          if (emailSent) {
+            this.logger.log(`Email de confirmación enviado exitosamente a ${userEmail} para el evento ${event.name}`);
+          } else {
+            this.logger.warn(`Error al enviar email de confirmación a ${userEmail} para el evento ${event.name}`);
+          }
+        } catch (error) {
+          this.logger.error(`Error enviando email para el evento ${eventId}:`, error);
+          // Continuar con el siguiente evento aunque este falle
+        }
+      }
+    } catch (error) {
+      this.logger.error('Error en sendMultipleEventConfirmationEmails:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Envía un email de modificación de evento
    */
   async sendEventModificationEmail(data: EventModificationEmailData): Promise<boolean> {
