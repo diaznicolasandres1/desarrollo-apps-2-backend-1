@@ -23,121 +23,64 @@ export class EmailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
-    // Inicializar de forma asíncrona
-    this.initializeTransporter().catch(error => {
-      this.logger.error('Error inicializando transporter:', error);
-    });
+    this.initializeTransporter();
   }
 
-  private async initializeTransporter() {
-    this.logger.log('🔧 Inicializando EmailService...');
-    this.logger.log(`EMAIL_USER: ${process.env.EMAIL_USER ? 'Configurado' : 'No configurado'}`);
-    this.logger.log(`EMAIL_PASS: ${process.env.EMAIL_PASS ? 'Configurado' : 'No configurado'}`);
+  private initializeTransporter() {
+    this.logger.log('Initializing EmailService...');
     
-    // Si no hay configuración de email O si hay error de autenticación, usar Ethereal para testing
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      this.logger.warn('⚠️  No hay configuración de email. Usando Ethereal Email para testing...');
-      
-      try {
-        // Crear cuenta de prueba en Ethereal
-        const testAccount = await nodemailer.createTestAccount();
-        
-        this.transporter = nodemailer.createTransport({
-          host: 'smtp.ethereal.email',
-          port: 587,
-          secure: false,
-          auth: {
-            user: testAccount.user,
-            pass: testAccount.pass,
-          },
-        });
-
-        this.logger.log('✅ Configurado Ethereal Email para testing');
-        this.logger.log(`📧 Usuario de prueba: ${testAccount.user}`);
-        this.logger.log(`🔑 Contraseña de prueba: ${testAccount.pass}`);
-        this.logger.log('🌐 Ve a https://ethereal.email para ver los emails enviados');
-        
-      } catch (error) {
-        this.logger.error('Error creando cuenta de prueba:', error);
-        return;
-      }
-    } else {
-      // Configuración normal con Gmail u otro proveedor
-      this.logger.log('📧 Usando configuración de email personalizada');
-      this.transporter = nodemailer.createTransport({
-        host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.EMAIL_PORT || '587'),
-        secure: false, // true para 465, false para otros puertos
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
-        },
-      });
+      this.logger.error('EMAIL_USER and EMAIL_PASS environment variables are required');
+      throw new Error('Incomplete email configuration. EMAIL_USER and EMAIL_PASS are required.');
     }
 
-    // Verificar la configuración de conexión
-    this.transporter.verify(async (error, success) => {
+    this.logger.log('Configuring transporter with provided credentials');
+    
+    this.transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.EMAIL_PORT || '587'),
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    this.transporter.verify((error, success) => {
       if (error) {
-        this.logger.error('❌ Error de configuración de email:', error);
-        this.logger.warn('⚠️  Cambiando a Ethereal Email para testing...');
-        
-        // Si hay error de autenticación, cambiar a Ethereal
-        try {
-          const testAccount = await nodemailer.createTestAccount();
-          this.transporter = nodemailer.createTransport({
-            host: 'smtp.ethereal.email',
-            port: 587,
-            secure: false,
-            auth: {
-              user: testAccount.user,
-              pass: testAccount.pass,
-            },
-          });
-          
-          this.logger.log('✅ Configurado Ethereal Email como fallback');
-          this.logger.log(`📧 Usuario de prueba: ${testAccount.user}`);
-          this.logger.log('🌐 Ve a https://ethereal.email para ver los emails enviados');
-          
-        } catch (etherealError) {
-          this.logger.error('❌ Error configurando Ethereal:', etherealError);
-        }
+        this.logger.error('Email configuration error:', error);
+        throw new Error(`Email configuration error: ${error.message}`);
       } else {
-        this.logger.log('✅ Servidor de email configurado correctamente');
+        this.logger.log('Email server configured successfully');
       }
     });
   }
 
   async sendEmail(emailData: EmailData, attachments?: any[]): Promise<boolean> {
-    this.logger.log(`📤 Intentando enviar email a: ${emailData.to}`);
-    this.logger.log(`📋 Asunto: ${emailData.subject}`);
+    this.logger.log(`Attempting to send email to: ${emailData.to}`);
+    this.logger.log(`Subject: ${emailData.subject}`);
     
     try {
       const mailOptions = {
-        from: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'test@ethereal.email',
+        from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
         to: emailData.to,
         subject: emailData.subject,
         html: emailData.html,
         attachments: attachments || []
       };
 
-      this.logger.log(`📧 From: ${mailOptions.from}`);
-      this.logger.log(`📧 To: ${mailOptions.to}`);
+      this.logger.log(`From: ${mailOptions.from}`);
+      this.logger.log(`To: ${mailOptions.to}`);
       if (attachments && attachments.length > 0) {
-        this.logger.log(`📎 Adjuntos: ${attachments.length} archivos`);
+        this.logger.log(`Attachments: ${attachments.length} files`);
       }
 
       const info = await this.transporter.sendMail(mailOptions);
-      this.logger.log(`✅ Email enviado exitosamente: ${info.messageId}`);
-      
-      // Si estamos usando Ethereal, mostrar la URL de preview
-      if (info.previewURL) {
-        this.logger.log(`🔗 Preview URL: ${info.previewURL}`);
-        this.logger.log('🌐 Ve a esa URL para ver el email enviado');
-      }
+      this.logger.log(`Email sent successfully: ${info.messageId}`);
       
       return true;
     } catch (error) {
-      this.logger.error('❌ Error al enviar email:', error);
+      this.logger.error('Error sending email:', error);
       return false;
     }
   }
@@ -145,22 +88,20 @@ export class EmailService {
   async sendTicketConfirmationEmail(data: TicketPurchaseEmailData): Promise<boolean> {
     const { userEmail, userName, event, tickets, totalAmount } = data;
 
-    const subject = `Confirmación de Reserva - ${event.name}`;
+    const subject = `Reservation Confirmation - ${event.name}`;
     const html = this.generateTicketConfirmationHTML(userName, event, tickets, totalAmount);
 
-    // Crear adjuntos para los códigos QR
     const attachments: any[] = [];
     tickets.forEach((ticket, index) => {
       const qrCodeDataURL = this.getQRCodeFromTicket(ticket);
       if (qrCodeDataURL) {
-        // Convertir base64 a buffer
         const base64Data = qrCodeDataURL.replace(/^data:image\/png;base64,/, '');
         const buffer = Buffer.from(base64Data, 'base64');
         
         attachments.push({
           filename: `qr-ticket-${(ticket as any)._id}.png`,
           content: buffer,
-          cid: `qr-${(ticket as any)._id}`, // Content ID para referenciar en el HTML
+          cid: `qr-${(ticket as any)._id}`, 
           contentType: 'image/png'
         });
       }
@@ -174,11 +115,10 @@ export class EmailService {
   }
 
   private getQRCodeFromTicket(ticket: Ticket): string {
-    // Usar el QR ya generado y guardado en el ticket
     const qrCode = (ticket as any).qrCode || '';
-    this.logger.log(`🔍 QR para ticket ${(ticket as any)._id}: ${qrCode ? 'Disponible' : 'No disponible'}`);
+    this.logger.log(`QR for ticket ${(ticket as any)._id}: ${qrCode ? 'Available' : 'Not available'}`);
     if (qrCode) {
-      this.logger.log(`📏 Longitud del QR: ${qrCode.length} caracteres`);
+      this.logger.log(`QR length: ${qrCode.length} characters`);
     }
     return qrCode;
   }
@@ -189,7 +129,6 @@ export class EmailService {
     tickets: Ticket[],
     totalAmount: number,
   ): string {
-    // Usar códigos QR ya generados y guardados en cada ticket
     const ticketList = tickets.map(ticket => {
       const qrCodeDataURL = this.getQRCodeFromTicket(ticket);
       return `

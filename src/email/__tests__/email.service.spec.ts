@@ -10,16 +10,7 @@ jest.mock('nodemailer', () => {
   };
   
   return {
-    createTransporter: jest.fn().mockReturnValue(mockTransporter),
     createTransport: jest.fn().mockReturnValue(mockTransporter),
-    createTestAccount: jest.fn().mockResolvedValue({
-      user: 'test@ethereal.email',
-      pass: 'testpass',
-      smtp: { host: 'smtp.ethereal.email', port: 587, secure: false },
-      imap: { host: 'imap.ethereal.email', port: 993, secure: true },
-      pop3: { host: 'pop3.ethereal.email', port: 995, secure: true },
-      web: 'https://ethereal.email'
-    }),
   };
 });
 
@@ -29,9 +20,22 @@ describe('EmailService', () => {
   let mockTransporter: any;
 
   beforeEach(async () => {
+    // Set up environment variables for testing
+    process.env.EMAIL_USER = 'test@example.com';
+    process.env.EMAIL_PASS = 'testpass';
+    process.env.EMAIL_HOST = 'smtp.example.com';
+    process.env.EMAIL_PORT = '587';
+    process.env.EMAIL_FROM = 'noreply@test.com';
+
     // Get the mocked transporter
     const nodemailer = require('nodemailer');
-    mockTransporter = nodemailer.createTransporter();
+    mockTransporter = nodemailer.createTransport();
+    
+    // Mock verify to simulate successful connection
+    mockTransporter.verify.mockImplementation((callback: any) => {
+      callback(null, true);
+    });
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EmailService,
@@ -44,6 +48,7 @@ describe('EmailService', () => {
                 EMAIL_PASS: 'testpass',
                 EMAIL_HOST: 'smtp.example.com',
                 EMAIL_PORT: '587',
+                EMAIL_FROM: 'noreply@test.com',
               };
               return config[key];
             }),
