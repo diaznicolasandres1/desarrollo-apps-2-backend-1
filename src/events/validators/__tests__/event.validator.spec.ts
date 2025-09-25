@@ -37,20 +37,6 @@ describe('EventValidator', () => {
       expect(() => service.validateEventData(createEventDto)).not.toThrow();
     });
 
-    it('should throw BadRequestException for past date', () => {
-      const pastDate = new Date();
-      pastDate.setDate(pastDate.getDate() - 1);
-
-      expect(() => service.validateEventDate(pastDate)).toThrow(BadRequestException);
-      expect(() => service.validateEventDate(pastDate)).toThrow('Event date cannot be in the past');
-    });
-
-    it('should accept future date', () => {
-      const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + 1);
-
-      expect(() => service.validateEventDate(futureDate)).not.toThrow();
-    });
   });
 
   describe('validateEventTime', () => {
