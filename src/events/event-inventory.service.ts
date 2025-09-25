@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
 import { EventNotFoundException } from '../common/exceptions/event-not-found.exception';
 import { EventInactiveException } from '../common/exceptions/event-inactive.exception';
-import { EventExpiredException } from '../common/exceptions/event-expired.exception';
 import type { EventRepository } from './interfaces/event.repository.interface';
 import { EVENT_REPOSITORY } from './interfaces/event.repository.token';
 import { Event } from './schemas/event.schema';
@@ -20,12 +19,6 @@ export class EventInventoryService {
 
     if (!event.isActive) {
       throw new EventInactiveException(eventId);
-    }
-
-    const now = new Date();
-    const eventDate = new Date(event.date);
-    if (eventDate <= now) {
-      throw new EventExpiredException(eventId, eventDate);
     }
 
     return event;

@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException, Inject, Logger } from '@nestjs/common';
 import { EventNotFoundException } from '../common/exceptions/event-not-found.exception';
 import { EventInactiveException } from '../common/exceptions/event-inactive.exception';
-import { EventExpiredException } from '../common/exceptions/event-expired.exception';
 import type { EventRepository } from './interfaces/event.repository.interface';
 import { EVENT_REPOSITORY } from './interfaces/event.repository.token';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -257,10 +256,6 @@ export class EventsService {
 
     if (!event.isActive) {
       throw new EventInactiveException(eventId);
-    }
-
-    if (event.date < new Date()) {
-      throw new EventExpiredException(eventId, event.date);
     }
 
     return event;

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
+import { Types } from 'mongoose';
 import { TicketsService } from '../tickets.service';
 import { EventInventoryService } from '../../events/event-inventory.service';
 import { TICKET_REPOSITORY } from '../interfaces/ticket.repository.token';
@@ -143,14 +144,42 @@ describe('TicketsService Integration Tests', () => {
       );
     });
 
-    it('should throw EventExpiredException when event date has passed', async () => {
-      jest.spyOn(eventInventoryService, 'validateEventForTicketPurchase').mockRejectedValue(
-        new EventExpiredException('507f1f77bcf86cd799439011', new Date('2020-01-01'))
-      );
+    it('should allow purchase when event date has passed (no date validation)', async () => {
+      const mockTickets = [
+        {
+          _id: '507f1f77bcf86cd799439013',
+          eventId: new Types.ObjectId('507f1f77bcf86cd799439011'),
+          userId: new Types.ObjectId('507f1f77bcf86cd799439012'),
+          ticketType: 'general',
+          price: 1000,
+          status: 'active',
+          qrCode: 'qr-code-1'
+        },
+        {
+          _id: '507f1f77bcf86cd799439014',
+          eventId: new Types.ObjectId('507f1f77bcf86cd799439011'),
+          userId: new Types.ObjectId('507f1f77bcf86cd799439012'),
+          ticketType: 'general',
+          price: 1000,
+          status: 'active',
+          qrCode: 'qr-code-2'
+        }
+      ];
 
-      await expect(service.purchaseTicket(purchaseTicketDto)).rejects.toThrow(
-        EventExpiredException
-      );
+      jest.spyOn(eventInventoryService, 'validateEventForTicketPurchase').mockResolvedValue(mockExpiredEvent);
+      jest.spyOn(eventInventoryService, 'checkTicketAvailability').mockResolvedValue(true);
+      jest.spyOn(eventInventoryService, 'updateTicketCount').mockResolvedValue(undefined);
+      mockTicketRepository.create
+        .mockResolvedValueOnce(mockTickets[0])
+        .mockResolvedValueOnce(mockTickets[1]);
+
+      const result = await service.purchaseTicket(purchaseTicketDto);
+      
+      expect(result).toHaveLength(2);
+      expect(result[0].eventId.toString()).toBe(purchaseTicketDto.eventId);
+      expect(result[0].userId.toString()).toBe(purchaseTicketDto.userId);
+      expect(result[0].ticketType).toBe(purchaseTicketDto.ticketType);
+      expect(result[0].price).toBe(mockExpiredEvent.ticketTypes[0].price);
     });
 
     it('should throw InsufficientTicketsException when not enough tickets available', async () => {
