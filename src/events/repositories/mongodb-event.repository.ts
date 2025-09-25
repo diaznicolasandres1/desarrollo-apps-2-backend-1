@@ -11,9 +11,20 @@ export class MongoDBEventRepository implements EventRepository {
     @InjectModel(Event.name) private eventModel: Model<EventDocument>,
   ) {}
 
+  /**
+   * Convierte un documento de Mongoose a objeto plano
+   */
+  private toPlainObject(doc: any): any {
+    if (doc && typeof doc.toObject === 'function') {
+      return doc.toObject();
+    }
+    return doc;
+  }
+
   async create(event: Partial<Event>): Promise<Event> {
     const createdEvent = new this.eventModel(event);
-    return createdEvent.save();
+    const saved = await createdEvent.save();
+    return this.toPlainObject(saved);
   }
 
   async findAll(query?: any): Promise<any[]> {
@@ -34,30 +45,36 @@ export class MongoDBEventRepository implements EventRepository {
       };
     }
 
-    return this.eventModel
+    const events = await this.eventModel
       .find(filter)
       .populate('culturalPlaceId', 'name description category characteristics contact image rating')
       .sort({ date: 1 })
       .exec();
+    
+    return events.map(event => this.toPlainObject(event));
   }
 
   async findById(id: string): Promise<any> {
-    return this.eventModel
+    const event = await this.eventModel
       .findById(id)
       .populate('culturalPlaceId', 'name description category characteristics contact image rating')
       .exec();
+    
+    return event ? this.toPlainObject(event) : null;
   }
 
   async findByCulturalPlace(culturalPlaceId: string): Promise<any[]> {
-    return this.eventModel
+    const events = await this.eventModel
       .find({ culturalPlaceId: new Types.ObjectId(culturalPlaceId) })
       .populate('culturalPlaceId', 'name description category characteristics contact image rating')
       .sort({ date: 1 })
       .exec();
+    
+    return events.map(event => this.toPlainObject(event));
   }
 
   async findByDateRange(startDate: Date, endDate: Date): Promise<any[]> {
-    return this.eventModel
+    const events = await this.eventModel
       .find({
         date: {
           $gte: startDate,
@@ -68,20 +85,26 @@ export class MongoDBEventRepository implements EventRepository {
       .populate('culturalPlaceId', 'name description category characteristics contact image rating')
       .sort({ date: 1 })
       .exec();
+    
+    return events.map(event => this.toPlainObject(event));
   }
 
   async findActiveEvents(): Promise<any[]> {
-    return this.eventModel
+    const events = await this.eventModel
       .find({ isActive: true })
       .populate('culturalPlaceId', 'name description category characteristics contact image rating')
       .sort({ date: 1 })
       .exec();
+    
+    return events.map(event => this.toPlainObject(event));
   }
 
   async update(id: string, event: Partial<Event>): Promise<Event | null> {
-    return this.eventModel
+    const updatedEvent = await this.eventModel
       .findByIdAndUpdate(id, event, { new: true })
       .exec();
+    
+    return updatedEvent ? this.toPlainObject(updatedEvent) : null;
   }
 
   async delete(id: string): Promise<boolean> {
@@ -94,7 +117,8 @@ export class MongoDBEventRepository implements EventRepository {
     if (!event) return null;
     
     event.isActive = !event.isActive;
-    return event.save();
+    const saved = await event.save();
+    return this.toPlainObject(saved);
   }
 
   async updateTicketCount(eventId: string, ticketType: string, quantity: number): Promise<boolean> {

@@ -165,17 +165,15 @@ describe('EventDataTransformer', () => {
     it('should transform multiple events coordinates', () => {
       const events = [
         {
-          toObject: () => ({
-            _id: '507f1f77bcf86cd799439011',
-            culturalPlaceId: {
-              contact: {
-                coordinates: {
-                  type: 'Point',
-                  coordinates: [-58.40879856, -34.61724004]
-                }
+          _id: '507f1f77bcf86cd799439011',
+          culturalPlaceId: {
+            contact: {
+              coordinates: {
+                type: 'Point',
+                coordinates: [-58.40879856, -34.61724004]
               }
             }
-          })
+          }
         },
         {
           _id: '507f1f77bcf86cd799439012',
