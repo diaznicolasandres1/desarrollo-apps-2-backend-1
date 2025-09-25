@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email.service';
+import { EmailSenderService } from '../services/email-sender.service';
+import { EmailTemplateService } from '../services/email-template.service';
+import { EmailAttachmentService } from '../services/email-attachment.service';
 
 // Mock nodemailer
 jest.mock('nodemailer', () => {
@@ -16,7 +18,9 @@ jest.mock('nodemailer', () => {
 
 describe('EmailService', () => {
   let service: EmailService;
-  let configService: jest.Mocked<ConfigService>;
+  let emailSenderService: jest.Mocked<EmailSenderService>;
+  let emailTemplateService: jest.Mocked<EmailTemplateService>;
+  let emailAttachmentService: jest.Mocked<EmailAttachmentService>;
   let mockTransporter: any;
 
   beforeEach(async () => {
@@ -40,25 +44,33 @@ describe('EmailService', () => {
       providers: [
         EmailService,
         {
-          provide: ConfigService,
+          provide: EmailSenderService,
           useValue: {
-            get: jest.fn().mockImplementation((key: string) => {
-              const config = {
-                EMAIL_USER: 'test@example.com',
-                EMAIL_PASS: 'testpass',
-                EMAIL_HOST: 'smtp.example.com',
-                EMAIL_PORT: '587',
-                EMAIL_FROM: 'noreply@test.com',
-              };
-              return config[key];
-            }),
+            sendEmail: jest.fn(),
+          },
+        },
+        {
+          provide: EmailTemplateService,
+          useValue: {
+            generateTicketConfirmationHTML: jest.fn(),
+            generateEventModificationHTML: jest.fn(),
+            generateEventCancellationHTML: jest.fn(),
+            getModificationSubject: jest.fn(),
+          },
+        },
+        {
+          provide: EmailAttachmentService,
+          useValue: {
+            createQRAttachments: jest.fn(),
           },
         },
       ],
     }).compile();
 
     service = module.get<EmailService>(EmailService);
-    configService = module.get(ConfigService);
+    emailSenderService = module.get(EmailSenderService);
+    emailTemplateService = module.get(EmailTemplateService);
+    emailAttachmentService = module.get(EmailAttachmentService);
   });
 
   afterEach(() => {
@@ -73,7 +85,6 @@ describe('EmailService', () => {
           ticketType: 'general',
           price: 1000,
           qrCode: 'data:image/png;base64,test',
-          validationURL: 'https://example.com/validate',
         },
       ];
 
@@ -85,22 +96,28 @@ describe('EmailService', () => {
         time: '20:00',
       };
 
-      const mockUser = {
-        _id: '507f1f77bcf86cd799439013',
-        name: 'Test User',
-        email: 'test@example.com',
-      };
-
-      mockTransporter.sendMail.mockResolvedValue({ messageId: 'test-message-id' });
+      emailTemplateService.generateTicketConfirmationHTML.mockReturnValue('<html>Test HTML</html>');
+      emailAttachmentService.createQRAttachments.mockReturnValue([]);
+      emailSenderService.sendEmail.mockResolvedValue(true);
 
       const result = await service.sendTicketConfirmationEmail({
-        tickets: mockTickets,
+        userEmail: 'test@example.com',
+        userName: 'Test User',
         event: mockEvent,
-        user: mockUser,
+        tickets: mockTickets,
+        totalAmount: 1000,
       });
 
       expect(result).toBe(true);
-      expect(mockTransporter.sendMail).toHaveBeenCalled();
+      expect(emailTemplateService.generateTicketConfirmationHTML).toHaveBeenCalledWith({
+        userEmail: 'test@example.com',
+        userName: 'Test User',
+        event: mockEvent,
+        tickets: mockTickets,
+        totalAmount: 1000,
+      });
+      expect(emailAttachmentService.createQRAttachments).toHaveBeenCalledWith(mockTickets);
+      expect(emailSenderService.sendEmail).toHaveBeenCalled();
     });
 
     it('should handle email sending failure', async () => {
@@ -110,7 +127,6 @@ describe('EmailService', () => {
           ticketType: 'general',
           price: 1000,
           qrCode: 'data:image/png;base64,test',
-          validationURL: 'https://example.com/validate',
         },
       ];
 
@@ -122,18 +138,16 @@ describe('EmailService', () => {
         time: '20:00',
       };
 
-      const mockUser = {
-        _id: '507f1f77bcf86cd799439013',
-        name: 'Test User',
-        email: 'test@example.com',
-      };
-
-      mockTransporter.sendMail.mockRejectedValue(new Error('Email failed'));
+      emailTemplateService.generateTicketConfirmationHTML.mockReturnValue('<html>Test HTML</html>');
+      emailAttachmentService.createQRAttachments.mockReturnValue([]);
+      emailSenderService.sendEmail.mockResolvedValue(false);
 
       const result = await service.sendTicketConfirmationEmail({
-        tickets: mockTickets,
+        userEmail: 'test@example.com',
+        userName: 'Test User',
         event: mockEvent,
-        user: mockUser,
+        tickets: mockTickets,
+        totalAmount: 1000,
       });
 
       expect(result).toBe(false);
@@ -141,7 +155,7 @@ describe('EmailService', () => {
   });
 
   describe('sendEventModificationEmail', () => {
-    it('should send event modification email for date change', async () => {
+    it('should send event modification email successfully', async () => {
       const mockEvent = {
         _id: '507f1f77bcf86cd799439012',
         name: 'Test Event',
@@ -150,7 +164,9 @@ describe('EmailService', () => {
         time: '20:00',
       };
 
-      mockTransporter.sendMail.mockResolvedValue({ messageId: 'test-message-id' });
+      emailTemplateService.getModificationSubject.mockReturnValue('⚠️ Cambio de Fecha - Test Event');
+      emailTemplateService.generateEventModificationHTML.mockReturnValue('<html>Test HTML</html>');
+      emailSenderService.sendEmail.mockResolvedValue(true);
 
       const result = await service.sendEventModificationEmail({
         userEmail: 'test@example.com',
@@ -164,137 +180,9 @@ describe('EmailService', () => {
       });
 
       expect(result).toBe(true);
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: 'test@example.com',
-          subject: expect.stringContaining('Cambio de Fecha'),
-          html: expect.stringContaining('Test Event'),
-        })
-      );
-    });
-
-    it('should send event modification email for time change', async () => {
-      const mockEvent = {
-        _id: '507f1f77bcf86cd799439012',
-        name: 'Test Event',
-        description: 'Test Description',
-        date: '2025-12-31T20:00:00.000Z',
-        time: '21:00',
-      };
-
-      mockTransporter.sendMail.mockResolvedValue({ messageId: 'test-message-id' });
-
-      const result = await service.sendEventModificationEmail({
-        userEmail: 'test@example.com',
-        userName: 'Test User',
-        event: mockEvent,
-        modificationType: 'time_change',
-        oldValue: '20:00',
-        newValue: '21:00',
-        ticketCount: 1,
-        ticketTypes: ['general'],
-      });
-
-      expect(result).toBe(true);
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: 'test@example.com',
-          subject: expect.stringContaining('Cambio de Hora'),
-        })
-      );
-    });
-
-    it('should send event modification email for date_time_change', async () => {
-      const mockEvent = {
-        _id: '507f1f77bcf86cd799439012',
-        name: 'Test Event',
-        description: 'Test Description',
-        date: '2025-12-31T20:00:00.000Z',
-        time: '21:00',
-      };
-
-      mockTransporter.sendMail.mockResolvedValue({ messageId: 'test-message-id' });
-
-      const result = await service.sendEventModificationEmail({
-        userEmail: 'test@example.com',
-        userName: 'Test User',
-        event: mockEvent,
-        modificationType: 'date_time_change',
-        oldValue: '30/12/2025 a las 20:00',
-        newValue: '31/12/2025 a las 21:00',
-        ticketCount: 3,
-        ticketTypes: ['general', 'vip', 'jubilados'],
-      });
-
-      expect(result).toBe(true);
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: 'test@example.com',
-          subject: expect.stringContaining('Cambio de Fecha y Hora'),
-        })
-      );
-    });
-
-    it('should send event modification email for location change', async () => {
-      const mockEvent = {
-        _id: '507f1f77bcf86cd799439012',
-        name: 'Test Event',
-        description: 'Test Description',
-        date: '2025-12-31T20:00:00.000Z',
-        time: '20:00',
-      };
-
-      mockTransporter.sendMail.mockResolvedValue({ messageId: 'test-message-id' });
-
-      const result = await service.sendEventModificationEmail({
-        userEmail: 'test@example.com',
-        userName: 'Test User',
-        event: mockEvent,
-        modificationType: 'location_change',
-        oldValue: 'Teatro Recoleta',
-        newValue: 'Carpe Diem',
-        ticketCount: 1,
-        ticketTypes: ['general'],
-      });
-
-      expect(result).toBe(true);
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: 'test@example.com',
-          subject: expect.stringContaining('Nueva Ubicación'),
-        })
-      );
-    });
-
-    it('should send event modification email for activation', async () => {
-      const mockEvent = {
-        _id: '507f1f77bcf86cd799439012',
-        name: 'Test Event',
-        description: 'Test Description',
-        date: '2025-12-31T20:00:00.000Z',
-        time: '20:00',
-      };
-
-      mockTransporter.sendMail.mockResolvedValue({ messageId: 'test-message-id' });
-
-      const result = await service.sendEventModificationEmail({
-        userEmail: 'test@example.com',
-        userName: 'Test User',
-        event: mockEvent,
-        modificationType: 'activation',
-        oldValue: 'Inactivo',
-        newValue: 'Activo',
-        ticketCount: 2,
-        ticketTypes: ['general', 'vip'],
-      });
-
-      expect(result).toBe(true);
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: 'test@example.com',
-          subject: expect.stringContaining('Evento Reactivado'),
-        })
-      );
+      expect(emailTemplateService.getModificationSubject).toHaveBeenCalledWith('date_change', 'Test Event');
+      expect(emailTemplateService.generateEventModificationHTML).toHaveBeenCalled();
+      expect(emailSenderService.sendEmail).toHaveBeenCalled();
     });
   });
 
@@ -308,7 +196,8 @@ describe('EmailService', () => {
         time: '20:00',
       };
 
-      mockTransporter.sendMail.mockResolvedValue({ messageId: 'test-message-id' });
+      emailTemplateService.generateEventCancellationHTML.mockReturnValue('<html>Test HTML</html>');
+      emailSenderService.sendEmail.mockResolvedValue(true);
 
       const result = await service.sendEventCancellationEmail({
         userEmail: 'test@example.com',
@@ -320,13 +209,15 @@ describe('EmailService', () => {
       });
 
       expect(result).toBe(true);
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: 'test@example.com',
-          subject: expect.stringContaining('Evento Cancelado'),
-          html: expect.stringContaining('Test Event'),
-        })
-      );
+      expect(emailTemplateService.generateEventCancellationHTML).toHaveBeenCalledWith({
+        userEmail: 'test@example.com',
+        userName: 'Test User',
+        event: mockEvent,
+        ticketCount: 2,
+        ticketTypes: ['general', 'vip'],
+        cancellationReason: 'El evento ha sido cancelado por el organizador.',
+      });
+      expect(emailSenderService.sendEmail).toHaveBeenCalled();
     });
 
     it('should send event cancellation email without reason', async () => {
@@ -338,7 +229,8 @@ describe('EmailService', () => {
         time: '20:00',
       };
 
-      mockTransporter.sendMail.mockResolvedValue({ messageId: 'test-message-id' });
+      emailTemplateService.generateEventCancellationHTML.mockReturnValue('<html>Test HTML</html>');
+      emailSenderService.sendEmail.mockResolvedValue(true);
 
       const result = await service.sendEventCancellationEmail({
         userEmail: 'test@example.com',
@@ -349,59 +241,57 @@ describe('EmailService', () => {
       });
 
       expect(result).toBe(true);
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
+      expect(emailTemplateService.generateEventCancellationHTML).toHaveBeenCalledWith({
+        userEmail: 'test@example.com',
+        userName: 'Test User',
+        event: mockEvent,
+        ticketCount: 1,
+        ticketTypes: ['general'],
+        cancellationReason: undefined,
+      });
+    });
+  });
+
+  describe('sendEmail', () => {
+    it('should send email successfully', async () => {
+      emailSenderService.sendEmail.mockResolvedValue(true);
+
+      const result = await service.sendEmail({
+        to: 'test@example.com',
+        subject: 'Test Subject',
+        html: '<html>Test HTML</html>',
+      });
+
+      expect(result).toBe(true);
+      expect(emailSenderService.sendEmail).toHaveBeenCalledWith(
+        {
           to: 'test@example.com',
-          subject: expect.stringContaining('Evento Cancelado'),
-        })
+          subject: 'Test Subject',
+          html: '<html>Test HTML</html>',
+        },
+        undefined
       );
     });
-  });
 
-  describe('getModificationSubject', () => {
-    it('should return correct subject for date_change', () => {
-      const subject = (service as any).getModificationSubject('date_change', 'Test Event');
-      expect(subject).toBe('⚠️ Cambio de Fecha - Test Event');
-    });
+    it('should send email with attachments', async () => {
+      const attachments = [{ filename: 'test.png', content: 'test' }];
+      emailSenderService.sendEmail.mockResolvedValue(true);
 
-    it('should return correct subject for time_change', () => {
-      const subject = (service as any).getModificationSubject('time_change', 'Test Event');
-      expect(subject).toBe('⚠️ Cambio de Hora - Test Event');
-    });
+      const result = await service.sendEmail({
+        to: 'test@example.com',
+        subject: 'Test Subject',
+        html: '<html>Test HTML</html>',
+      }, attachments);
 
-    it('should return correct subject for date_time_change', () => {
-      const subject = (service as any).getModificationSubject('date_time_change', 'Test Event');
-      expect(subject).toBe('⚠️ Cambio de Fecha y Hora - Test Event');
-    });
-
-    it('should return correct subject for location_change', () => {
-      const subject = (service as any).getModificationSubject('location_change', 'Test Event');
-      expect(subject).toBe('📍 Nueva Ubicación - Test Event');
-    });
-
-    it('should return correct subject for activation', () => {
-      const subject = (service as any).getModificationSubject('activation', 'Test Event');
-      expect(subject).toBe('✅ Evento Reactivado - Test Event');
-    });
-
-    it('should return default subject for unknown type', () => {
-      const subject = (service as any).getModificationSubject('unknown_type', 'Test Event');
-      expect(subject).toBe('📢 Actualización - Test Event');
-    });
-  });
-
-  describe('generateEventModificationHTML', () => {
-    it('should return default message for unknown modification type', () => {
-      const html = (service as any).generateEventModificationHTML(
-        'Test User',
-        { name: 'Test Event' },
-        'unknown_type',
-        'oldValue',
-        'newValue',
-        1,
-        ['general']
+      expect(result).toBe(true);
+      expect(emailSenderService.sendEmail).toHaveBeenCalledWith(
+        {
+          to: 'test@example.com',
+          subject: 'Test Subject',
+          html: '<html>Test HTML</html>',
+        },
+        attachments
       );
-      expect(html).toContain('Ha habido una actualización importante en el evento.');
     });
   });
 });
