@@ -17,18 +17,18 @@ async function bootstrap() {
   // Global prefix for API versioning
   app.setGlobalPrefix('api/v1');
 
-  const config = new DocumentBuilder()
+  const swaggerServerUrl = process.env.SWAGGER_SERVER_URL;
+
+  const builder = new DocumentBuilder()
     .setTitle('Cultural Places API')
     .setDescription('API para gestionar lugares culturales de Buenos Aires')
     .setVersion('1.0')
     .addTag('cultural-places', 'Endpoints para gestionar lugares culturales')
-    .addTag('users', 'Endpoints para gestionar usuarios')
-    .addServer(
-      process.env.NODE_ENV === 'production'
-        ? 'https://desarrollo-apps2-back-end.vercel.app'
-        : 'http://localhost:3000',
-    )
-    .build();
+    .addTag('users', 'Endpoints para gestionar usuarios');
+
+  const config = (
+    swaggerServerUrl ? builder.addServer(swaggerServerUrl) : builder
+  ).build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document, {
