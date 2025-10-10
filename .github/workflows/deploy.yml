@@ -85,23 +85,27 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: ./dist
+
       - name: Show files
         run: ls -la
 
       - name: Create deploy.tar for CapRover
         run: |
-          # Crear el paquete de despliegue desde el repo usando el Dockerfile existente
-          # Excluir archivos innecesarios para la build
+          # Crear paquete desde el repo incluyendo Dockerfile, captain-definition, package*.json y dist/
           tar \
             --exclude='./.git' \
             --exclude='./node_modules' \
             --exclude='./coverage' \
             --exclude='./.github' \
-            --exclude='./dist' \
             -cf deploy.tar .
 
-          echo "📦 Contenido del deploy.tar (primeros 100):"
-          tar -tvf deploy.tar | head -n 100
+          echo "📦 Contenido del deploy.tar:"
+          tar -tvf deploy.tar
           echo "📏 Tamaño del tar:"
           ls -lh deploy.tar
 
@@ -112,13 +116,9 @@ jobs:
         run: npm install -g caprover
 
       - name: Deploy to CapRover
-        env:
-          CAPROVER_SERVER: ${{ secrets.CAPROVER_SERVER }}
-          CAPROVER_APP_TOKEN: ${{ secrets.CAPROVER_APP_TOKEN }}
-          APP_NAME: ${{ secrets.APP_NAME }}
         run: |
           caprover deploy \
-            -u "$CAPROVER_SERVER" \
-            -a "$APP_NAME" \
-            --appToken "$CAPROVER_APP_TOKEN" \
+            -u ${{ secrets.CAPROVER_SERVER }} \
+            -a ${{ secrets.APP_NAME }} \
+            --appToken ${{ secrets.CAPROVER_APP_TOKEN }} \
             -t ./deploy.tar
