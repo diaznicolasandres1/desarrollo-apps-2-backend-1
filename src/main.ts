@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { MetricsService } from './metrics/metrics.service';
+import { MetricsInterceptor } from './metrics/metrics.interceptor';
 
 // Configurar timezone para Argentina (GMT-3)
 process.env.TZ = 'America/Argentina/Buenos_Aires';
@@ -49,6 +50,10 @@ async function bootstrap() {
 
   // Configurar métricas
   const metricsService = app.get(MetricsService);
+  const metricsInterceptor = app.get(MetricsInterceptor);
+  
+  // Aplicar interceptor globalmente
+  app.useGlobalInterceptors(metricsInterceptor);
   
   // Endpoint para métricas de Prometheus
   app.use('/metrics', async (req, res) => {
