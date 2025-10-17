@@ -176,6 +176,7 @@ describe('UserService', () => {
         isGoogleUser: false,
         role: 'user',
         createdAt: expect.any(Date),
+        updatedAt: expect.any(Date),
       });
       expect(result).toEqual(newUser);
     });

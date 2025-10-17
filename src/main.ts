@@ -3,6 +3,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { MetricsService } from './metrics/metrics.service';
 import { MetricsInterceptor } from './metrics/metrics.interceptor';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { Reflector } from '@nestjs/core';
 
 // Configurar timezone para Argentina (GMT-3)
 process.env.TZ = 'America/Argentina/Buenos_Aires';
@@ -18,6 +20,7 @@ async function bootstrap() {
 
   // Global prefix for API versioning
   app.setGlobalPrefix('api/v1');
+
 
   const config = new DocumentBuilder()
     .setTitle('Cultural Places API')

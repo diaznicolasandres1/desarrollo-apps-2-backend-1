@@ -6,11 +6,14 @@ import {
   Param,
   Post,
   Put,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { User } from '../user.schema';
 import { UserService } from './user.service';
 import { LoginDto } from '../dto/login.dto';
+import { Public } from '../../common/decorators/public.decorator';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @ApiTags('users')
 @Controller('users')
@@ -18,11 +21,13 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   async create(@Body() user: User) {
     return this.userService.create(user);
   }
 
   @Post('login-without-password')
+  @Public()
   @ApiOperation({ 
     summary: 'Login or create user with email only',
     description: 'Authenticate user with email only (no password required). If user exists, returns user data. If not, creates new user automatically with default role "user".'
@@ -96,11 +101,13 @@ export class UserController {
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard)
   async update(@Param('id') id: string, @Body() user: Partial<User>) {
     return this.userService.update(id, user);
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   async remove(@Param('id') id: string) {
     return this.userService.remove(id);
   }

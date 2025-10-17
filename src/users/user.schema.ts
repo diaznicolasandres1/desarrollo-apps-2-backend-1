@@ -17,8 +17,14 @@ export class User {
   @Prop()
   age?: number;
 
-  @Prop({ required: false })
+  @Prop({ required: false, default: false })
   isGoogleUser: boolean;
+
+  @Prop({ required: false })
+  googleId?: string;
+
+  @Prop({ required: false })
+  profilePicture?: string;
 
   @Prop({ 
     type: String, 
@@ -29,6 +35,9 @@ export class User {
 
   @Prop({ default: Date.now })
   createdAt: Date;
+
+  @Prop({ default: Date.now })
+  updatedAt: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

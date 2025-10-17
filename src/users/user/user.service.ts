@@ -31,6 +31,10 @@ export class UserService {
     return deleted ? await this.userRepository.findById(id) : null;
   }
 
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findByEmail(email);
+  }
+
   async loginOrCreate(loginDto: LoginDto): Promise<User> {
     // Buscar usuario por email
     let user = await this.userRepository.findByEmail(loginDto.email);
@@ -44,6 +48,7 @@ export class UserService {
         isGoogleUser: false,
         role: 'user', // Rol por defecto para usuarios universitarios
         createdAt: new Date(),
+        updatedAt: new Date(),
       };
       user = await this.userRepository.create(newUser);
     }
