@@ -4,8 +4,8 @@ import {
   ExecutionContext,
   CallHandler,
 } from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { MetricsService } from './metrics.service';
 
 @Injectable()
@@ -19,12 +19,25 @@ export class MetricsInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap(() => {
+        // Capturar requests exitosos
         const duration = (Date.now() - startTime) / 1000;
         const method = request.method;
         const route = request.route?.path || request.url;
         const statusCode = response.statusCode;
 
         this.metricsService.recordHttpRequest(method, route, statusCode, duration);
+      }),
+      catchError((error) => {
+        // Capturar requests con errores (4XX, 5XX)
+        const duration = (Date.now() - startTime) / 1000;
+        const method = request.method;
+        const route = request.route?.path || request.url;
+        const statusCode = error.status || error.statusCode || 500;
+
+        this.metricsService.recordHttpRequest(method, route, statusCode, duration);
+        
+        // Re-lanzar el error para que NestJS lo maneje normalmente
+        return throwError(() => error);
       }),
     );
   }
