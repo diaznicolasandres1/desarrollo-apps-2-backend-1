@@ -1,0 +1,26 @@
+# CapRover Configuration
+# Este archivo define cómo CapRover debe desplegar tu aplicación
+
+# Variables de entorno que CapRover puede configurar
+# Puedes configurarlas desde el panel de CapRover
+
+# MongoDB Configuration
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority
+
+# Application Configuration
+PORT=3000
+NODE_ENV=production
+
+# Email Configuration
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-app-password
+EMAIL_FROM=noreply@ticketsapp.com
+
+# Redis Configuration
+REDIS_URL=redis://default:H7kW4dJlSHsx8sGg8ehljtm7Bz6BMayQ@redis-18580.c270.us-east-1-3.ec2.redns.redis-cloud.com:18580
+REDIS_HOST=redis-18580.c270.us-east-1-3.ec2.redns.redis-cloud.com
+REDIS_PORT=18580
+REDIS_PASSWORD=H7kW4dJlSHsx8sGg8ehljtm7Bz6BMayQ
+REDIS_DB=0
