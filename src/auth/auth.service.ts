@@ -12,11 +12,9 @@ export class AuthService {
   ) {}
 
   async validateGoogleUser(googleData: GoogleAuthDto): Promise<JwtResponse> {
-    // Buscar usuario existente por email
     let user = await this.userService.findByEmail(googleData.email);
 
     if (user) {
-      // Si el usuario existe pero no es de Google, actualizar
       if (!user.isGoogleUser) {
         user = await this.userService.update((user as any)._id.toString(), {
           ...user,
@@ -26,7 +24,6 @@ export class AuthService {
           updatedAt: new Date(),
         });
       } else {
-        // Actualizar información de Google
         user = await this.userService.update((user as any)._id.toString(), {
           ...user,
           profilePicture: googleData.profilePicture,
@@ -34,7 +31,6 @@ export class AuthService {
         });
       }
     } else {
-      // Crear nuevo usuario de Google
       const newUser: Partial<User> = {
         name: googleData.name,
         email: googleData.email,

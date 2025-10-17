@@ -21,10 +21,6 @@ async function bootstrap() {
   // Global prefix for API versioning
   app.setGlobalPrefix('api/v1');
 
-  // JWT Guard se aplicará manualmente en cada controlador que lo necesite
-  // Para aplicar globalmente, descomenta las siguientes líneas:
-  // const reflector = app.get(Reflector);
-  // app.useGlobalGuards(new JwtAuthGuard(reflector));
 
   const config = new DocumentBuilder()
     .setTitle('Cultural Places API')

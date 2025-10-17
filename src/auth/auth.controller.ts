@@ -31,10 +31,7 @@ export class AuthController {
     status: 302, 
     description: 'Redirección a Google OAuth2' 
   })
-  async googleAuth(@Req() req: Request) {
-    // Este endpoint será manejado por el GoogleAuthGuard
-    // que redirigirá automáticamente a Google
-  }
+  async googleAuth(@Req() req: Request) {}
 
   @Get('google/callback')
   @Public()
@@ -52,7 +49,6 @@ export class AuthController {
       const googleData: GoogleAuthDto = req.user as GoogleAuthDto;
       const result = await this.authService.validateGoogleUser(googleData);
       
-      // Redirigir al frontend con el token
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
       const redirectUrl = `${frontendUrl}/auth/callback?token=${result.access_token}`;
       
