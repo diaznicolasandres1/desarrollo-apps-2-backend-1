@@ -9,15 +9,18 @@ import {
   Query,
   HttpStatus,
   HttpCode,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { TicketsService } from './tickets.service';
 import { PurchaseTicketDto } from './dto/purchase-ticket.dto';
 import { PurchaseMultipleTicketsDto } from './dto/purchase-multiple-tickets.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('tickets')
 @Controller('tickets')
+@UseGuards(JwtAuthGuard)
 export class TicketsController {
   constructor(
     private readonly ticketsService: TicketsService

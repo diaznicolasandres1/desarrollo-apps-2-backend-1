@@ -17,6 +17,7 @@ import { CulturalPlacesService } from './cultural-places.service';
 import { CreateCulturalPlaceDto } from './dto/create-cultural-place.dto';
 import { UpdateCulturalPlaceDto } from './dto/update-cultural-place.dto';
 import type { CulturalPlaceQueryDto } from './interfaces/cultural-place.interface';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('cultural-places')
 @Controller('cultural-places')
@@ -24,6 +25,7 @@ export class CulturalPlacesController {
   constructor(private readonly culturalPlacesService: CulturalPlacesService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new cultural place' })
   @ApiResponse({ status: 201, description: 'Cultural place created successfully' })
@@ -104,6 +106,7 @@ export class CulturalPlacesController {
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update a cultural place' })
   @ApiParam({ name: 'id', description: 'Cultural place ID' })
   @ApiResponse({ status: 200, description: 'Cultural place updated successfully' })
@@ -117,11 +120,13 @@ export class CulturalPlacesController {
   }
 
   @Patch(':id/toggle-active')
+  @UseGuards(JwtAuthGuard)
   async toggleActive(@Param('id') id: string) {
     return this.culturalPlacesService.toggleActive(id);
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string) {
     await this.culturalPlacesService.remove(id);

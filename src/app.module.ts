@@ -9,6 +9,7 @@ import { EventsModule } from './events/events.module';
 import { TicketsModule } from './tickets/tickets.module';
 import { RedisModule } from './redis/redis.module';
 import { MetricsModule } from './metrics/metrics.module';
+import { AuthModule } from './auth/auth.module';
 import { getDatabaseConfig } from './config/database.config';
 
 @Module({
@@ -26,6 +27,7 @@ import { getDatabaseConfig } from './config/database.config';
     }),
     RedisModule,
     MetricsModule,
+    AuthModule,
     UsersModule,
     CulturalPlacesModule,
     EventsModule,
