@@ -15,7 +15,7 @@ RUN npm run build
 # Stage de producción
 FROM node:22-alpine AS production
 
-RUN apk add --no-cache dumb-init
+RUN apk add --no-cache dumb-init wget
 
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nestjs -u 1001
