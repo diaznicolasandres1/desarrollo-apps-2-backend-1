@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { MetricsService } from './metrics/metrics.service';
 
 // Configurar timezone para Argentina (GMT-3)
 process.env.TZ = 'America/Argentina/Buenos_Aires';
@@ -46,10 +47,26 @@ async function bootstrap() {
     ],
   });
 
+  // Configurar métricas
+  const metricsService = app.get(MetricsService);
+  
+  // Endpoint para métricas de Prometheus
+  app.use('/metrics', async (req, res) => {
+    try {
+      metricsService.updateMemoryUsage();
+      const metrics = await metricsService.getMetrics();
+      res.set('Content-Type', 'text/plain');
+      res.end(metrics);
+    } catch (error) {
+      res.status(500).end('Error generating metrics');
+    }
+  });
+
   const port = process.env.PORT || 3000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
   console.log(`🚀 Application is running on: http://localhost:${port}`);
   console.log(`📚 Swagger documentation: http://localhost:${port}/docs`);
+  console.log(`📊 Metrics endpoint: http://localhost:${port}/metrics`);
 }
 bootstrap();
