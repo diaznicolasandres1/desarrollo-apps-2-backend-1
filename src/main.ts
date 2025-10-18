@@ -3,6 +3,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { MetricsService } from './metrics/metrics.service';
 import { MetricsInterceptor } from './metrics/metrics.interceptor';
+import { MetricsExceptionFilter } from './common/filters/metrics-exception.filter';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { Reflector } from '@nestjs/core';
 
@@ -54,9 +55,11 @@ async function bootstrap() {
   // Configurar métricas
   const metricsService = app.get(MetricsService);
   const metricsInterceptor = app.get(MetricsInterceptor);
+  const metricsExceptionFilter = app.get(MetricsExceptionFilter);
   
-  // Aplicar interceptor globalmente
+  // Aplicar interceptor y filtro globalmente
   app.useGlobalInterceptors(metricsInterceptor);
+  app.useGlobalFilters(metricsExceptionFilter);
   
   // Endpoint para métricas de Prometheus
   app.use('/metrics', async (req, res) => {
