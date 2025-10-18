@@ -16,6 +16,9 @@ export class MetricsInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest();
     const response = context.switchToHttp().getResponse();
     const startTime = Date.now();
+    
+    // Guardar el tiempo de inicio en la request para que el filtro de excepciones pueda usarlo
+    request['startTime'] = startTime;
 
     return next.handle().pipe(
       tap(() => {
